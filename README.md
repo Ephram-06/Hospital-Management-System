@@ -1,6 +1,17 @@
 # COSC 214 – Data Structures and Algorithms
 ## Project: Hospital Management System
 
+## How to Run
+```bash
+# Compile
+javac -d out src/*.java
+
+# Run
+java -cp out HospitalSystem
+```
+
+---
+
 ### Design Document – Part 1
 
 | | |
