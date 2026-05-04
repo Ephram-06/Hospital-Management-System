@@ -70,7 +70,10 @@ public class HospitalSystem {
                 case "11": undoTreatment();              break;
                 case "12": viewTreatmentLog();           break;
                 case "13": billingStatistics();          break;
-                case "14": BenchmarkRunner.run(patientList, allPatients); break;
+                case "14": BenchmarkRunner.run(patientList, allPatients);
+                           System.out.print("\n  Press ENTER to return to the menu, or type 0 to exit: ");
+                           if ("0".equals(sc.nextLine().trim())) { System.out.println("  Goodbye."); sc.close(); return; }
+                           break;
                 case "0":  System.out.println("  Goodbye."); sc.close(); return;
                 default:   System.out.println("  Invalid option, try again.");
             }
