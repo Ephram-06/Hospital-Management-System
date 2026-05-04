@@ -51,33 +51,40 @@ public class HospitalSystem {
 
     private void run() {
         Scanner sc = new Scanner(System.in);
-        while (true) {
+        boolean running = true;
+        while (running) {
             printMenu();
             System.out.print("  Choice: ");
             String choice = sc.nextLine().trim();
             System.out.println();
             switch (choice) {
-                case "1":  addPatient(sc);              break;
-                case "2":  listAllPatients();            break;
-                case "3":  searchPatient(sc);            break;
-                case "4":  removePatient(sc);            break;
-                case "5":  viewDoctors();                break;
-                case "6":  addDoctor(sc);                break;
-                case "7":  removeDoctor(sc);             break;
-                case "8":  processNextAppointment();     break;
-                case "9":  viewAppointmentQueues();      break;
-                case "10": logTreatment(sc);             break;
-                case "11": undoTreatment();              break;
-                case "12": viewTreatmentLog();           break;
-                case "13": billingStatistics();          break;
+                case "1":  addPatient(sc);                                          break;
+                case "2":  listAllPatients();            if (pauseOrExit(sc)) running = false; break;
+                case "3":  searchPatient(sc);            if (pauseOrExit(sc)) running = false; break;
+                case "4":  removePatient(sc);                                       break;
+                case "5":  viewDoctors();                if (pauseOrExit(sc)) running = false; break;
+                case "6":  addDoctor(sc);                                           break;
+                case "7":  removeDoctor(sc);                                        break;
+                case "8":  processNextAppointment();     if (pauseOrExit(sc)) running = false; break;
+                case "9":  viewAppointmentQueues();      if (pauseOrExit(sc)) running = false; break;
+                case "10": logTreatment(sc);                                        break;
+                case "11": undoTreatment();              if (pauseOrExit(sc)) running = false; break;
+                case "12": viewTreatmentLog();           if (pauseOrExit(sc)) running = false; break;
+                case "13": billingStatistics();          if (pauseOrExit(sc)) running = false; break;
                 case "14": BenchmarkRunner.run(patientList, allPatients);
-                           System.out.print("\n  Press ENTER to return to the menu, or type 0 to exit: ");
-                           if ("0".equals(sc.nextLine().trim())) { System.out.println("  Goodbye."); sc.close(); return; }
-                           break;
-                case "0":  System.out.println("  Goodbye."); sc.close(); return;
+                                                         if (pauseOrExit(sc)) running = false; break;
+                case "0":  running = false; break;
                 default:   System.out.println("  Invalid option, try again.");
             }
         }
+        System.out.println("  Goodbye.");
+        sc.close();
+    }
+
+    // Returns true if user typed 0 (wants to exit), false to continue
+    private boolean pauseOrExit(Scanner sc) {
+        System.out.print("\n  Press ENTER to return to the menu, or type 0 to exit: ");
+        return "0".equals(sc.nextLine().trim());
     }
 
     private void printMenu() {
