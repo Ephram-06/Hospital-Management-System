@@ -2,13 +2,7 @@
 ## Project: Hospital Management System
 
 ## How to Run
-```bash
-# Compile
-javac -d out src/*.java
-
-# Run
-java -cp out HospitalSystem
-```
+Just open in VS Code and run `HospitalSystem.java`
 
 ---
 
