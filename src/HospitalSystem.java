@@ -298,7 +298,7 @@ public class HospitalSystem {
         System.out.printf("  Elective           : %d%n",           elective);
         System.out.printf("  Total billing      : $%,.2f%n",       total);
         System.out.printf("  Average billing    : $%,.2f%n",       total / allPatients.size());
-        System.out.printf("  Highest billing    : $%,.2f  — %s%n", max, highestBill != null ? highestBill.name : "N/A");
+        System.out.printf("  Highest billing    : $%,.2f  - %s%n", max, highestBill != null ? highestBill.name : "N/A");
         System.out.printf("  Lowest billing     : $%,.2f%n",       min);
     }
 }
