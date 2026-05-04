@@ -33,6 +33,10 @@ public class HospitalSystem {
             nextId = allPatients.size() + 1;
             for (PatientRecord p : allPatients) {
                 patientList.insert(p);
+                // Auto-register doctor from patient record if not already known
+                if (doctorMap.getDoctor(p.doctorName) == null) {
+                    doctorMap.addDoctor(new Doctor(p.doctorName, "General Practice", "N/A"));
+                }
                 if (p.admissionType.equalsIgnoreCase("emergency") ||
                     p.admissionType.equalsIgnoreCase("urgent")) {
                     emergencyQ.insert(p);
@@ -123,18 +127,28 @@ public class HospitalSystem {
 
     private void addPatient(Scanner sc) {
         try {
-            System.out.print("  Name: ");              String name    = sc.nextLine().trim();
-            System.out.print("  Age: ");               int age        = Integer.parseInt(sc.nextLine().trim());
-            System.out.print("  Gender (Male/Female): "); String gender = sc.nextLine().trim();
-            System.out.print("  Diagnosis: ");         String diag    = sc.nextLine().trim();
-            System.out.print("  Admission Type (Emergency/Urgent/Elective): ");
-                                                       String admType = sc.nextLine().trim();
-            System.out.print("  Doctor ID: ");         int docId      = Integer.parseInt(sc.nextLine().trim());
-            System.out.print("  Billing Amount ($): "); double billing = Double.parseDouble(sc.nextLine().trim());
+            System.out.print("  Name: ");                           String name     = sc.nextLine().trim();
+            System.out.print("  Age: ");                            int    age      = Integer.parseInt(sc.nextLine().trim());
+            System.out.print("  Gender (Male/Female): ");           String gender   = sc.nextLine().trim();
+            System.out.print("  Blood Type (e.g. A+): ");           String blood    = sc.nextLine().trim();
+            System.out.print("  Diagnosis: ");                      String diag     = sc.nextLine().trim();
+            System.out.print("  Date of Admission (MM/DD/YYYY): "); String admDate  = sc.nextLine().trim();
+            System.out.print("  Doctor Name: ");                    String docName  = sc.nextLine().trim();
+            System.out.print("  Hospital: ");                       String hosp     = sc.nextLine().trim();
+            System.out.print("  Insurance Provider: ");             String ins      = sc.nextLine().trim();
+            System.out.print("  Billing Amount ($): ");             double billing  = Double.parseDouble(sc.nextLine().trim());
+            System.out.print("  Room Number: ");                    int    room     = Integer.parseInt(sc.nextLine().trim());
+            System.out.print("  Admission Type (Emergency/Urgent/Elective): "); String admType = sc.nextLine().trim();
+            System.out.print("  Discharge Date (MM/DD/YYYY): ");    String discDate = sc.nextLine().trim();
+            System.out.print("  Medication: ");                     String med      = sc.nextLine().trim();
+            System.out.print("  Test Results (Normal/Abnormal/Inconclusive): "); String results = sc.nextLine().trim();
 
-            PatientRecord p = new PatientRecord(nextId++, name, age, gender, diag, admType, docId, billing);
+            PatientRecord p = new PatientRecord(nextId++, name, age, gender, blood, diag,
+                    admDate, docName, hosp, ins, billing, room, admType, discDate, med, results);
             patientList.insert(p);
             allPatients.add(p);
+            if (doctorMap.getDoctor(docName) == null)
+                doctorMap.addDoctor(new Doctor(docName, "General Practice", "N/A"));
 
             if (admType.equalsIgnoreCase("emergency") || admType.equalsIgnoreCase("urgent")) {
                 emergencyQ.insert(p);
@@ -143,7 +157,7 @@ public class HospitalSystem {
             }
             System.out.println("  Patient added: " + p);
         } catch (NumberFormatException e) {
-            System.out.println("  Invalid input — patient not added.");
+            System.out.println("  Invalid input - patient not added.");
         }
     }
 
@@ -164,8 +178,12 @@ public class HospitalSystem {
                     PatientRecord r = search.findPatientById(id);
                     if (r != null) {
                         System.out.println("  Found: " + r);
-                        Doctor d = search.findDoctorById(r.doctorId);
-                        if (d != null) System.out.println("  Assigned Doctor: " + d);
+                        System.out.printf("    Blood Type: %s | Hospital: %s | Room: %d%n", r.bloodType, r.hospital, r.roomNumber);
+                        System.out.printf("    Admitted: %s | Discharged: %s%n", r.dateOfAdmission, r.dischargeDate);
+                        System.out.printf("    Medication: %s | Test Results: %s%n", r.medication, r.testResults);
+                        System.out.printf("    Insurance: %s%n", r.insuranceProvider);
+                        Doctor d = search.findDoctorByName(r.doctorName);
+                        if (d != null) System.out.println("    Assigned Doctor: " + d);
                     } else System.out.println("  Not found.");
                 } catch (NumberFormatException e) { System.out.println("  Invalid ID."); }
                 break;
@@ -210,24 +228,19 @@ public class HospitalSystem {
     }
 
     private void addDoctor(Scanner sc) {
-        try {
-            System.out.print("  Doctor ID: ");          int id    = Integer.parseInt(sc.nextLine().trim());
-            System.out.print("  Name: ");               String name  = sc.nextLine().trim();
-            System.out.print("  Specialization: ");     String spec  = sc.nextLine().trim();
-            System.out.print("  Available Hours: ");    String hours = sc.nextLine().trim();
-            Doctor d = new Doctor(id, name, spec, hours);
-            doctorMap.addDoctor(d);
-            System.out.println("  Doctor added: " + d);
-        } catch (NumberFormatException e) { System.out.println("  Invalid input — doctor not added."); }
+        System.out.print("  Name: ");               String name  = sc.nextLine().trim();
+        System.out.print("  Specialization: ");     String spec  = sc.nextLine().trim();
+        System.out.print("  Available Hours: ");    String hours = sc.nextLine().trim();
+        Doctor d = new Doctor(name, spec, hours);
+        doctorMap.addDoctor(d);
+        System.out.println("  Doctor added: " + d);
     }
 
     private void removeDoctor(Scanner sc) {
-        System.out.print("  Doctor ID to remove: ");
-        try {
-            int id = Integer.parseInt(sc.nextLine().trim());
-            if (doctorMap.removeDoctor(id)) System.out.println("  Doctor #" + id + " removed.");
-            else System.out.println("  Doctor #" + id + " not found.");
-        } catch (NumberFormatException e) { System.out.println("  Invalid ID."); }
+        System.out.print("  Doctor name to remove: ");
+        String name = sc.nextLine().trim();
+        if (doctorMap.removeDoctor(name)) System.out.println("  Doctor '" + name + "' removed.");
+        else System.out.println("  Doctor '" + name + "' not found.");
     }
 
     // ─── Appointment Queues ──────────────────────────────────────────────────────
@@ -235,7 +248,7 @@ public class HospitalSystem {
     private void processNextAppointment() {
         if (!emergencyQ.isEmpty()) {
             PatientRecord p = emergencyQ.extractMin();
-            System.out.println("  Serving [PRIORITY — " + p.admissionType.toUpperCase() + "]: " + p);
+            System.out.println("  Serving [PRIORITY - " + p.admissionType.toUpperCase() + "]: " + p);
         } else if (!appointmentQueue.isEmpty()) {
             PatientRecord p = appointmentQueue.dequeue();
             System.out.println("  Serving [REGULAR]: " + p);

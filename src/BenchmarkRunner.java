@@ -103,16 +103,30 @@ public class BenchmarkRunner {
         List<PatientRecord> list = new ArrayList<>(size);
         String[] diagnoses = {"Hypertension", "Diabetes", "Pneumonia", "Appendicitis",
                               "Fracture", "Asthma", "Migraine", "Kidney Stones"};
+        String[] bloodTypes = {"A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"};
+        String[] hospitals  = {"Cedar Sinai", "St. Mary Hospital", "General Hospital", "Mercy Medical"};
+        String[] insurers   = {"Aetna", "Blue Cross", "Cigna", "Medicare", "UnitedHealthcare"};
+        String[] meds       = {"Aspirin", "Ibuprofen", "Paracetamol", "Penicillin", "Lipitor"};
+        String[] results    = {"Normal", "Abnormal", "Inconclusive"};
+        String[] doctors    = {"Dr. Ephram Mbapte", "Dr. Mohamed Kargbo", "Dr. Nia Allen", "Dr. Nicholas Armenta"};
         for (int i = 1; i <= size; i++) {
             list.add(new PatientRecord(
                     i,
                     "Patient" + i,
                     20 + (i % 60),
                     i % 2 == 0 ? "Male" : "Female",
+                    bloodTypes[i % bloodTypes.length],
                     diagnoses[i % diagnoses.length],
+                    "01/01/2024",
+                    doctors[i % doctors.length],
+                    hospitals[i % hospitals.length],
+                    insurers[i % insurers.length],
+                    1000.0 + (i % 50000),
+                    100 + (i % 400),
                     ADM_TYPES[i % ADM_TYPES.length],
-                    (i % 5) + 1,
-                    1000.0 + (i % 50000)
+                    "01/10/2024",
+                    meds[i % meds.length],
+                    results[i % results.length]
             ));
         }
         return list;

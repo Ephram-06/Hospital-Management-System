@@ -22,7 +22,7 @@ public class SearchModule {
         return patientList.searchByDiagnosis(diagnosis);
     }
 
-    public Doctor findDoctorById(int doctorId) {
-        return doctorMap.getDoctor(doctorId);
+    public Doctor findDoctorByName(String name) {
+        return doctorMap.getDoctor(name);
     }
 }

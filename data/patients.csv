@@ -1,21 +1,21 @@
-name,age,gender,diagnosis,admissionType,doctorId,billingAmount
-John Smith,45,Male,Hypertension,Emergency,1,12500.00
-Emily Davis,32,Female,Appendicitis,Emergency,2,18200.00
-Marcus Lee,67,Male,Diabetes Type 2,Urgent,3,5600.00
-Priya Patel,28,Female,Fractured Arm,Urgent,4,3200.00
-Robert Wilson,54,Male,Pneumonia,Emergency,1,9800.00
-Aisha Thompson,41,Female,Kidney Stones,Urgent,2,7400.00
-Carlos Rivera,19,Male,Appendicitis,Emergency,2,15600.00
-Nadia Kim,37,Female,Migraine,Elective,3,1200.00
-James Brown,72,Male,Heart Failure,Emergency,1,32000.00
-Lisa Chen,50,Female,Chronic Back Pain,Elective,4,2800.00
-Daniel Park,63,Male,Arthritis,Elective,3,4100.00
-Fatima Hassan,29,Female,Asthma Attack,Urgent,3,6700.00
-Tyler Scott,44,Male,Gallstones,Urgent,2,8900.00
-Angela Nguyen,56,Female,Breast Cancer,Elective,1,45000.00
-Kevin Martinez,33,Male,Sprained Ankle,Elective,4,900.00
-Olivia Brown,25,Female,Anemia,Urgent,3,3400.00
-Samuel Adams,68,Male,Stroke,Emergency,1,28500.00
-Rachel Green,39,Female,Thyroid Disorder,Elective,3,5200.00
-Derek Johnson,48,Male,Ulcerative Colitis,Urgent,2,11200.00
-Sophia Turner,61,Female,Osteoporosis,Elective,4,6800.00
+Name,Age,Gender,Blood Type,Medical Condition,Date of Admission,Doctor,Hospital,Insurance Provider,Billing Amount,Room Number,Admission Type,Discharge Date,Medication,Test Results
+John Smith,45,Male,A+,Hypertension,01/15/2024,Dr. Ephram Mbapte,Cedar Sinai,Aetna,12500.00,101,Emergency,01/20/2024,Aspirin,Abnormal
+Emily Davis,32,Female,O-,Appendicitis,02/03/2024,Dr. Mohamed Kargbo,St. Mary Hospital,Blue Cross,18200.00,205,Emergency,02/08/2024,Penicillin,Normal
+Marcus Lee,67,Male,B+,Diabetes Type 2,03/10/2024,Dr. Nia Allen,General Hospital,Cigna,5600.00,310,Urgent,03/15/2024,Ibuprofen,Inconclusive
+Priya Patel,28,Female,AB+,Fractured Arm,04/01/2024,Dr. Nicholas Armenta,Mercy Medical,Medicare,3200.00,112,Urgent,04/05/2024,Ibuprofen,Normal
+Robert Wilson,54,Male,A-,Pneumonia,04/12/2024,Dr. Ephram Mbapte,Cedar Sinai,UnitedHealthcare,9800.00,203,Emergency,04/18/2024,Penicillin,Abnormal
+Aisha Thompson,41,Female,O+,Kidney Stones,05/05/2024,Dr. Mohamed Kargbo,St. Mary Hospital,Aetna,7400.00,301,Urgent,05/09/2024,Aspirin,Normal
+Carlos Rivera,19,Male,B-,Appendicitis,05/20/2024,Dr. Mohamed Kargbo,General Hospital,Blue Cross,15600.00,108,Emergency,05/25/2024,Paracetamol,Abnormal
+Nadia Kim,37,Female,A+,Migraine,06/01/2024,Dr. Nia Allen,Mercy Medical,Cigna,1200.00,220,Elective,06/03/2024,Ibuprofen,Normal
+James Brown,72,Male,O-,Heart Failure,06/14/2024,Dr. Ephram Mbapte,Cedar Sinai,Medicare,32000.00,401,Emergency,06/24/2024,Lipitor,Abnormal
+Lisa Chen,50,Female,AB-,Chronic Back Pain,07/02/2024,Dr. Nicholas Armenta,St. Mary Hospital,UnitedHealthcare,2800.00,315,Elective,07/06/2024,Ibuprofen,Inconclusive
+Daniel Park,63,Male,A+,Arthritis,07/15/2024,Dr. Nia Allen,General Hospital,Aetna,4100.00,210,Elective,07/20/2024,Aspirin,Normal
+Fatima Hassan,29,Female,B+,Asthma Attack,08/01/2024,Dr. Nia Allen,Mercy Medical,Blue Cross,6700.00,305,Urgent,08/04/2024,Paracetamol,Abnormal
+Tyler Scott,44,Male,O+,Gallstones,08/18/2024,Dr. Mohamed Kargbo,Cedar Sinai,Cigna,8900.00,202,Urgent,08/22/2024,Ibuprofen,Normal
+Angela Nguyen,56,Female,A-,Breast Cancer,09/05/2024,Dr. Ephram Mbapte,St. Mary Hospital,Medicare,45000.00,410,Elective,09/25/2024,Lipitor,Abnormal
+Kevin Martinez,33,Male,B-,Sprained Ankle,09/10/2024,Dr. Nicholas Armenta,General Hospital,UnitedHealthcare,900.00,115,Elective,09/11/2024,Ibuprofen,Normal
+Olivia Brown,25,Female,AB+,Anemia,10/01/2024,Dr. Nia Allen,Mercy Medical,Aetna,3400.00,218,Urgent,10/04/2024,Aspirin,Inconclusive
+Samuel Adams,68,Male,O+,Stroke,10/15/2024,Dr. Ephram Mbapte,Cedar Sinai,Blue Cross,28500.00,402,Emergency,10/25/2024,Aspirin,Abnormal
+Rachel Green,39,Female,A+,Thyroid Disorder,11/02/2024,Dr. Nia Allen,St. Mary Hospital,Cigna,5200.00,312,Elective,11/07/2024,Lipitor,Normal
+Derek Johnson,48,Male,B+,Ulcerative Colitis,11/20/2024,Dr. Mohamed Kargbo,General Hospital,Medicare,11200.00,207,Urgent,11/25/2024,Paracetamol,Inconclusive
+Sophia Turner,61,Female,O-,Osteoporosis,12/05/2024,Dr. Nicholas Armenta,Mercy Medical,UnitedHealthcare,6800.00,320,Elective,12/10/2024,Ibuprofen,Normal
