@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class BenchmarkRunner {
@@ -6,38 +7,70 @@ public class BenchmarkRunner {
     private static final int   RUNS  = 5;
     private static final int[] SIZES = {1000, 2000, 5000, 10000};
 
-    // Admission types cycled to generate synthetic data
     private static final String[] ADM_TYPES = {"Emergency", "Urgent", "Elective"};
 
     // ─── Called from the menu ────────────────────────────────────────────────────
 
     public static void run(PatientLinkedList list, List<PatientRecord> allRecords) {
-        System.out.println("\n  Running benchmarks across 4 data sizes (" + RUNS + " runs each) ...");
+        System.out.println("\n  Running benchmarks across 4 data sizes (" + RUNS + " runs each)...");
+        System.out.println("  Time complexity: O(n) = linear, O(1) = constant, O(log n) = logarithmic\n");
 
-        // Results table: [sizeIndex][operation]  0=insert 1=search 2=delete 3=pqInsert
-        long[][] results = new long[SIZES.length][4];
+        // Collect results per structure: [sizeIndex][op]
+        long[][] llResults  = new long[SIZES.length][3]; // Insert, Search, Delete
+        long[][] arrResults = new long[SIZES.length][3]; // Insert, Search, Delete
+        long[][] htResults  = new long[SIZES.length][3]; // Insert, Lookup, Delete
+        long[][] qResults   = new long[SIZES.length][4]; // Enqueue, Dequeue, PQ Insert, PQ Extract
 
         for (int s = 0; s < SIZES.length; s++) {
             List<PatientRecord> dataset = generateDataset(SIZES[s]);
-            System.out.printf("  Testing %,d records ... %n", SIZES[s]);
-
-            // Build a list once for search (search doesn't mutate)
-            PatientLinkedList searchList = new PatientLinkedList();
-            for (PatientRecord p : dataset) searchList.insert(p);
             int midId = dataset.get(SIZES[s] / 2).id;
+            System.out.printf("  Benchmarking %,d records...%n", SIZES[s]);
 
-            results[s][0] = avgInsert(dataset);
-            results[s][1] = avgSearch(searchList, midId);
-            results[s][2] = avgDelete(dataset, midId);
-            results[s][3] = avgPriorityQueue(dataset);
+            // Linked List
+            llResults[s][0] = avgLLInsert(dataset);
+            llResults[s][1] = avgLLSearch(dataset, midId);
+            llResults[s][2] = avgLLDelete(dataset, midId);
+
+            // Array (ArrayList)
+            arrResults[s][0] = avgArrayInsert(dataset);
+            arrResults[s][1] = avgArraySearch(dataset, midId);
+            arrResults[s][2] = avgArrayDelete(dataset, midId);
+
+            // Hash Table (HashMap)
+            htResults[s][0] = avgHashInsert(dataset);
+            htResults[s][1] = avgHashLookup(dataset, midId);
+            htResults[s][2] = avgHashDelete(dataset, midId);
+
+            // Queue / Priority Queue
+            qResults[s][0] = avgQueueEnqueue(dataset);
+            qResults[s][1] = avgQueueDequeue(dataset);
+            qResults[s][2] = avgPQInsert(dataset);
+            qResults[s][3] = avgPQExtract(dataset);
         }
 
-        printSummaryTable(results);
+        printTable("LINKED LIST",
+                new String[]{"Insert O(1)", "Search O(n)", "Delete O(n)"},
+                llResults);
+
+        printTable("ARRAY (ArrayList)",
+                new String[]{"Insert O(1)*", "Search O(n)", "Delete O(n)"},
+                arrResults);
+
+        printTable("HASH TABLE (HashMap)",
+                new String[]{"Insert O(1)", "Lookup O(1)", "Delete O(1)"},
+                htResults);
+
+        printTable("QUEUE / PRIORITY QUEUE",
+                new String[]{"Enqueue O(1)", "Dequeue O(1)", "PQ Insert O(log n)", "PQ Extract O(log n)"},
+                qResults);
+
+        System.out.println("  * Each value = average of " + RUNS + " runs (nanoseconds)");
+        System.out.println("  * Array Insert amortized O(1) due to dynamic resizing");
     }
 
-    // ─── Individual averaged operations ─────────────────────────────────────────
+    // ─── Linked List ─────────────────────────────────────────────────────────────
 
-    private static long avgInsert(List<PatientRecord> dataset) {
+    private static long avgLLInsert(List<PatientRecord> dataset) {
         long total = 0;
         for (int r = 0; r < RUNS; r++) {
             PatientLinkedList temp = new PatientLinkedList();
@@ -48,17 +81,19 @@ public class BenchmarkRunner {
         return total / RUNS;
     }
 
-    private static long avgSearch(PatientLinkedList list, int targetId) {
+    private static long avgLLSearch(List<PatientRecord> dataset, int targetId) {
+        PatientLinkedList ll = new PatientLinkedList();
+        for (PatientRecord p : dataset) ll.insert(p);
         long total = 0;
         for (int r = 0; r < RUNS; r++) {
             long start = System.nanoTime();
-            list.searchById(targetId);
+            ll.searchById(targetId);
             total += System.nanoTime() - start;
         }
         return total / RUNS;
     }
 
-    private static long avgDelete(List<PatientRecord> dataset, int targetId) {
+    private static long avgLLDelete(List<PatientRecord> dataset, int targetId) {
         long total = 0;
         for (int r = 0; r < RUNS; r++) {
             PatientLinkedList copy = new PatientLinkedList();
@@ -70,7 +105,104 @@ public class BenchmarkRunner {
         return total / RUNS;
     }
 
-    private static long avgPriorityQueue(List<PatientRecord> dataset) {
+    // ─── Array (ArrayList) ───────────────────────────────────────────────────────
+
+    private static long avgArrayInsert(List<PatientRecord> dataset) {
+        long total = 0;
+        for (int r = 0; r < RUNS; r++) {
+            List<PatientRecord> arr = new ArrayList<>();
+            long start = System.nanoTime();
+            for (PatientRecord p : dataset) arr.add(p);
+            total += System.nanoTime() - start;
+        }
+        return total / RUNS;
+    }
+
+    private static long avgArraySearch(List<PatientRecord> dataset, int targetId) {
+        List<PatientRecord> arr = new ArrayList<>(dataset);
+        long total = 0;
+        for (int r = 0; r < RUNS; r++) {
+            long start = System.nanoTime();
+            for (PatientRecord p : arr) { if (p.id == targetId) break; }
+            total += System.nanoTime() - start;
+        }
+        return total / RUNS;
+    }
+
+    private static long avgArrayDelete(List<PatientRecord> dataset, int targetId) {
+        long total = 0;
+        for (int r = 0; r < RUNS; r++) {
+            List<PatientRecord> copy = new ArrayList<>(dataset);
+            long start = System.nanoTime();
+            copy.removeIf(p -> p.id == targetId);
+            total += System.nanoTime() - start;
+        }
+        return total / RUNS;
+    }
+
+    // ─── Hash Table (HashMap) ────────────────────────────────────────────────────
+
+    private static long avgHashInsert(List<PatientRecord> dataset) {
+        long total = 0;
+        for (int r = 0; r < RUNS; r++) {
+            HashMap<Integer, PatientRecord> map = new HashMap<>();
+            long start = System.nanoTime();
+            for (PatientRecord p : dataset) map.put(p.id, p);
+            total += System.nanoTime() - start;
+        }
+        return total / RUNS;
+    }
+
+    private static long avgHashLookup(List<PatientRecord> dataset, int targetId) {
+        HashMap<Integer, PatientRecord> map = new HashMap<>();
+        for (PatientRecord p : dataset) map.put(p.id, p);
+        long total = 0;
+        for (int r = 0; r < RUNS; r++) {
+            long start = System.nanoTime();
+            map.get(targetId);
+            total += System.nanoTime() - start;
+        }
+        return total / RUNS;
+    }
+
+    private static long avgHashDelete(List<PatientRecord> dataset, int targetId) {
+        long total = 0;
+        for (int r = 0; r < RUNS; r++) {
+            HashMap<Integer, PatientRecord> copy = new HashMap<>();
+            for (PatientRecord p : dataset) copy.put(p.id, p);
+            long start = System.nanoTime();
+            copy.remove(targetId);
+            total += System.nanoTime() - start;
+        }
+        return total / RUNS;
+    }
+
+    // ─── Queue / Priority Queue ──────────────────────────────────────────────────
+
+    private static long avgQueueEnqueue(List<PatientRecord> dataset) {
+        long total = 0;
+        for (int r = 0; r < RUNS; r++) {
+            AppointmentQueue q = new AppointmentQueue();
+            long start = System.nanoTime();
+            for (PatientRecord p : dataset) q.enqueue(p);
+            total += System.nanoTime() - start;
+        }
+        return total / RUNS;
+    }
+
+    private static long avgQueueDequeue(List<PatientRecord> dataset) {
+        long total = 0;
+        for (int r = 0; r < RUNS; r++) {
+            AppointmentQueue q = new AppointmentQueue();
+            for (PatientRecord p : dataset) q.enqueue(p);
+            long start = System.nanoTime();
+            while (!q.isEmpty()) q.dequeue();
+            total += System.nanoTime() - start;
+        }
+        return total / RUNS;
+    }
+
+    private static long avgPQInsert(List<PatientRecord> dataset) {
         long total = 0;
         for (int r = 0; r < RUNS; r++) {
             EmergencyPriorityQueue pq = new EmergencyPriorityQueue();
@@ -81,20 +213,41 @@ public class BenchmarkRunner {
         return total / RUNS;
     }
 
-    // ─── Summary table ───────────────────────────────────────────────────────────
-
-    private static void printSummaryTable(long[][] results) {
-        String sep = "+----------+--------------------+--------------------+--------------------+--------------------+";
-        System.out.println("\n" + sep);
-        System.out.printf("| %-8s | %-18s | %-18s | %-18s | %-18s |%n",
-                "Size", "LL Insert (ns)", "LL Search (ns)", "LL Delete (ns)", "PQ Insert (ns)");
-        System.out.println(sep);
-        for (int s = 0; s < SIZES.length; s++) {
-            System.out.printf("| %,8d | %,18d | %,18d | %,18d | %,18d |%n",
-                    SIZES[s], results[s][0], results[s][1], results[s][2], results[s][3]);
+    private static long avgPQExtract(List<PatientRecord> dataset) {
+        long total = 0;
+        for (int r = 0; r < RUNS; r++) {
+            EmergencyPriorityQueue pq = new EmergencyPriorityQueue();
+            for (PatientRecord p : dataset) pq.insert(p);
+            long start = System.nanoTime();
+            while (!pq.isEmpty()) pq.extractMin();
+            total += System.nanoTime() - start;
         }
-        System.out.println(sep);
-        System.out.println("  * Each value is the average of " + RUNS + " runs  |  LL = Linked List  |  PQ = Priority Queue");
+        return total / RUNS;
+    }
+
+    // ─── Table printer ───────────────────────────────────────────────────────────
+
+    private static void printTable(String title, String[] opNames, long[][] results) {
+        // Build header dynamically based on number of operations
+        int cols = opNames.length;
+        String colFmt = "+----------";
+        for (int i = 0; i < cols; i++) colFmt += "+----------------------";
+        String sep = colFmt + "+";
+
+        System.out.println("\n  [ " + title + " ]");
+        System.out.println("  " + sep);
+        System.out.print("  | " + String.format("%-8s", "Size"));
+        for (String op : opNames) System.out.print(" | " + String.format("%-20s", op));
+        System.out.println(" |");
+        System.out.println("  " + sep);
+        for (int s = 0; s < SIZES.length; s++) {
+            System.out.print("  | " + String.format("%,8d", SIZES[s]));
+            for (int o = 0; o < cols; o++) {
+                System.out.print(" | " + String.format("%,20d", results[s][o]));
+            }
+            System.out.println(" |");
+        }
+        System.out.println("  " + sep);
     }
 
     // ─── Synthetic dataset generator ────────────────────────────────────────────
