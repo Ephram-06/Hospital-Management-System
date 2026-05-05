@@ -2,26 +2,8 @@
 ## Project: Hospital Management System
 
 ## How to Run
-1. Clone the repository
-2. **Download the Kaggle dataset** (see Dataset section below) and place it as `data/patients.csv`
-3. Compile: `javac --release 8 -d out src/*.java`
-4. Run: `java -cp out HospitalSystem`
-
-Alternatively, just open in VS Code and run `HospitalSystem.java`
-
----
-
-## Dataset
-
-This project uses the **Healthcare Dataset** from Kaggle:
-> https://www.kaggle.com/datasets/prasad22/healthcare-dataset
-
-Download `healthcare_dataset.csv` (10,000 records, 8.4 MB) and save it as `data/patients.csv`.
-
-The dataset contains 15 columns in this order:
-`Name, Age, Gender, Blood Type, Medical Condition, Date of Admission, Doctor, Hospital, Insurance Provider, Billing Amount, Room Number, Admission Type, Discharge Date, Medication, Test Results`
-
-A 20-record sample file is included in the repository so the system runs without requiring the Kaggle download. Replace it with the full dataset for real benchmarking.
+1. Clone the repository from GitHub
+2. Open the project in VS Code and run `HospitalSystem.java`
 
 ---
 
