@@ -7,17 +7,8 @@
 
 ## How to Run
 
-```bash
-# 1. Clone
-git clone https://github.com/Ephram-06/Hospital-Management-System.git
-cd Hospital-Management-System
-
-# 2. Compile
-javac -d out src/*.java
-
-# 3. Run
-java -cp out HospitalSystem
-```
+1. Clone the repository from GitHub
+2. Open the project in VS Code and run `HospitalSystem.java`
 
 The system auto-loads **10,000 real patient records** from `data/patients.csv` (Kaggle healthcare dataset) and 4 doctors from `data/doctors.csv` on startup.
 
