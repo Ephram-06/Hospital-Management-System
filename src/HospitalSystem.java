@@ -63,7 +63,7 @@ public class HospitalSystem {
             System.out.println();
             switch (choice) {
                 case "1":  addPatient(sc);                                          break;
-                case "2":  listAllPatients();            if (pauseOrExit(sc)) running = false; break;
+                case "2":  listAllPatients(sc);           if (pauseOrExit(sc)) running = false; break;
                 case "3":  searchPatient(sc);            if (pauseOrExit(sc)) running = false; break;
                 case "4":  removePatient(sc);                                       break;
                 case "5":  viewDoctors();                if (pauseOrExit(sc)) running = false; break;
@@ -77,6 +77,7 @@ public class HospitalSystem {
                 case "13": billingStatistics();          if (pauseOrExit(sc)) running = false; break;
                 case "14": BenchmarkRunner.run(patientList, allPatients);
                                                          if (pauseOrExit(sc)) running = false; break;
+                case "15": sortPatients(sc);              if (pauseOrExit(sc)) running = false; break;
                 case "0":  running = false; break;
                 default:   System.out.println("  Invalid option, try again.");
             }
@@ -119,6 +120,7 @@ public class HospitalSystem {
         System.out.println("║  REPORTS & TOOLS                             ║");
         System.out.println("║   13. Billing Statistics                     ║");
         System.out.println("║   14. Run Performance Benchmarks             ║");
+        System.out.println("║   15. Sort & Browse Patients                 ║");
         System.out.println("║   0.  Exit                                   ║");
         System.out.println("╚══════════════════════════════════════════════╝");
     }
@@ -161,13 +163,60 @@ public class HospitalSystem {
         }
     }
 
-    private void listAllPatients() {
-        System.out.println("--- All Patients (" + patientList.size() + ") ---");
-        patientList.printAll();
+    private void listAllPatients(Scanner sc) {
+        int total = allPatients.size();
+        System.out.println("  Total patients loaded: " + total);
+        System.out.println();
+        System.out.println("  How would you like to browse?");
+        System.out.println("    1. Browse all   (20 per page)");
+        System.out.println("    2. Sort first, then browse");
+        System.out.println("    3. Quick summary (first 10 + stats)");
+        System.out.println("    0. Back");
+        System.out.print("  Choice: ");
+        switch (sc.nextLine().trim()) {
+            case "1":
+                browsePaged(allPatients, sc, "All Patients");
+                break;
+            case "2":
+                sortPatients(sc);
+                break;
+            case "3": {
+                System.out.println("--- First 10 of " + total + " patients ---");
+                for (int i = 0; i < Math.min(10, total); i++)
+                    System.out.println("  " + allPatients.get(i));
+                if (total > 10) System.out.println("  ... and " + (total - 10) + " more.");
+                break;
+            }
+            default: break;
+        }
+    }
+
+    /** Shows patients 20 at a time. Press Enter for next page, 0 to stop. */
+    private void browsePaged(List<PatientRecord> list, Scanner sc, String title) {
+        final int PAGE = 20;
+        int total = list.size();
+        if (total == 0) { System.out.println("  No patients to display."); return; }
+        int page = 0;
+        while (page * PAGE < total) {
+            int from = page * PAGE;
+            int to   = Math.min(from + PAGE, total);
+            System.out.println();
+            System.out.println("--- " + title + " [" + (from + 1) + "-" + to + " of " + total + "] ---");
+            for (int i = from; i < to; i++)
+                System.out.println("  " + list.get(i));
+            if (to >= total) { System.out.println("  (end of list)"); break; }
+            System.out.print("  [ENTER] next page   [0] stop: ");
+            String inp = sc.nextLine().trim();
+            if ("0".equals(inp)) break;
+            page++;
+        }
     }
 
     private void searchPatient(Scanner sc) {
-        System.out.println("  Search by:  1) ID   2) Name   3) Diagnosis");
+        System.out.println("  Search by:");
+        System.out.println("    1) ID (exact)        2) Name (partial)");
+        System.out.println("    3) Diagnosis         4) Blood Type");
+        System.out.println("    5) Hospital          6) Test Results");
         System.out.print("  Choice: ");
         String opt = sc.nextLine().trim();
         switch (opt) {
@@ -191,18 +240,51 @@ public class HospitalSystem {
             case "2": {
                 System.out.print("  Name (partial ok): ");
                 List<PatientRecord> res = search.findPatientsByName(sc.nextLine().trim());
-                if (res.isEmpty()) System.out.println("  No matches.");
-                else res.forEach(r -> System.out.println("  " + r));
+                printSearchResults(res, sc);
                 break;
             }
             case "3": {
                 System.out.print("  Diagnosis (partial ok): ");
                 List<PatientRecord> res = search.findPatientsByDiagnosis(sc.nextLine().trim());
-                if (res.isEmpty()) System.out.println("  No matches.");
-                else res.forEach(r -> System.out.println("  " + r));
+                printSearchResults(res, sc);
+                break;
+            }
+            case "4": {
+                System.out.print("  Blood Type (e.g. A+): ");
+                List<PatientRecord> res = search.findPatientsByBloodType(sc.nextLine().trim());
+                printSearchResults(res, sc);
+                break;
+            }
+            case "5": {
+                System.out.print("  Hospital name (partial ok): ");
+                List<PatientRecord> res = search.findPatientsByHospital(sc.nextLine().trim());
+                printSearchResults(res, sc);
+                break;
+            }
+            case "6": {
+                System.out.println("  Test Results: 1) Normal  2) Abnormal  3) Inconclusive");
+                System.out.print("  Choice: ");
+                String tr = sc.nextLine().trim();
+                String keyword = tr.equals("1") ? "Normal" : tr.equals("2") ? "Abnormal" : "Inconclusive";
+                List<PatientRecord> res = search.findPatientsByTestResults(keyword);
+                printSearchResults(res, sc);
                 break;
             }
             default: System.out.println("  Invalid option.");
+        }
+    }
+
+    /** Print search results with paging if > 20 hits. */
+    private void printSearchResults(List<PatientRecord> res, Scanner sc) {
+        if (res.isEmpty()) { System.out.println("  No matches."); return; }
+        System.out.println("  Found " + res.size() + " match(es).");
+        if (res.size() > 20) {
+            System.out.print("  [ENTER] browse paged   [A] show all: ");
+            String inp = sc.nextLine().trim();
+            if ("a".equalsIgnoreCase(inp)) res.forEach(r -> System.out.println("  " + r));
+            else browsePaged(res, sc, "Search Results");
+        } else {
+            res.forEach(r -> System.out.println("  " + r));
         }
     }
 
@@ -291,6 +373,9 @@ public class HospitalSystem {
 
         double total = 0, max = Double.MIN_VALUE, min = Double.MAX_VALUE;
         int emergency = 0, urgent = 0, elective = 0;
+        // Test-result buckets
+        int    normCount = 0, abnCount = 0, incCount = 0;
+        double normTotal = 0, abnTotal = 0, incTotal = 0;
         PatientRecord highestBill = null;
 
         for (PatientRecord p : allPatients) {
@@ -302,6 +387,10 @@ public class HospitalSystem {
                 case "urgent":    urgent++;    break;
                 default:          elective++;  break;
             }
+            String tr = p.testResults == null ? "" : p.testResults.toLowerCase();
+            if      (tr.equals("normal"))       { normCount++; normTotal += p.billingAmount; }
+            else if (tr.equals("abnormal"))     { abnCount++;  abnTotal  += p.billingAmount; }
+            else                                { incCount++;  incTotal  += p.billingAmount; }
         }
 
         System.out.println("--- Billing & Admission Statistics ---");
@@ -313,5 +402,35 @@ public class HospitalSystem {
         System.out.printf("  Average billing    : $%,.2f%n",       total / allPatients.size());
         System.out.printf("  Highest billing    : $%,.2f  - %s%n", max, highestBill != null ? highestBill.name : "N/A");
         System.out.printf("  Lowest billing     : $%,.2f%n",       min);
+        System.out.println();
+        System.out.println("  --- Billing by Test Results ---");
+        System.out.printf("  Normal      : %5d patients  |  avg $%,.2f%n", normCount, normCount > 0 ? normTotal / normCount : 0);
+        System.out.printf("  Abnormal    : %5d patients  |  avg $%,.2f%n", abnCount,  abnCount  > 0 ? abnTotal  / abnCount  : 0);
+        System.out.printf("  Inconclusive: %5d patients  |  avg $%,.2f%n", incCount,  incCount  > 0 ? incTotal  / incCount  : 0);
+    }
+
+    private void sortPatients(Scanner sc) {
+        System.out.println("  Sort by:  1) Name   2) Age   3) Billing Amount");
+        System.out.print("  Field: ");
+        String fieldOpt = sc.nextLine().trim();
+        String field = fieldOpt.equals("1") ? "name" : fieldOpt.equals("2") ? "age" : "billing";
+
+        System.out.println("  Algorithm:  1) Bubble Sort   2) Merge Sort   3) Quick Sort");
+        System.out.print("  Choice: ");
+        String algOpt = sc.nextLine().trim();
+
+        long start = System.nanoTime();
+        List<PatientRecord> sorted;
+        String algName;
+        switch (algOpt) {
+            case "1": sorted = SortingModule.bubbleSort(allPatients, field); algName = "Bubble Sort"; break;
+            case "3": sorted = SortingModule.quickSort(allPatients,  field); algName = "Quick Sort";  break;
+            default:  sorted = SortingModule.mergeSort(allPatients,  field); algName = "Merge Sort";  break;
+        }
+        long elapsed = System.nanoTime() - start;
+
+        System.out.printf("%n  Sorted %,d patients by [%s] using %s in %,d ns%n",
+                sorted.size(), field, algName, elapsed);
+        browsePaged(sorted, sc, "Sorted by " + field);
     }
 }

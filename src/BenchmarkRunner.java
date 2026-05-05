@@ -1,3 +1,6 @@
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -13,59 +16,68 @@ public class BenchmarkRunner {
 
     public static void run(PatientLinkedList list, List<PatientRecord> allRecords) {
         System.out.println("\n  Running benchmarks across 4 data sizes (" + RUNS + " runs each)...");
-        System.out.println("  Time complexity: O(n) = linear, O(1) = constant, O(log n) = logarithmic\n");
+        System.out.println("  Time complexity: O(n)=linear  O(1)=constant  O(log n)=logarithmic\n");
 
-        // Collect results per structure: [sizeIndex][op]
-        long[][] llResults  = new long[SIZES.length][3]; // Insert, Search, Delete
-        long[][] arrResults = new long[SIZES.length][3]; // Insert, Search, Delete
-        long[][] htResults  = new long[SIZES.length][3]; // Insert, Lookup, Delete
-        long[][] qResults   = new long[SIZES.length][4]; // Enqueue, Dequeue, PQ Insert, PQ Extract
+        long[][] llResults   = new long[SIZES.length][3]; // Insert, Search, Delete
+        long[][] arrResults  = new long[SIZES.length][3]; // Insert, Search, Delete
+        long[][] htResults   = new long[SIZES.length][3]; // Insert, Lookup, Delete
+        long[][] qResults    = new long[SIZES.length][4]; // Enqueue, Dequeue, PQ Insert, PQ Extract
+        long[][] sortResults = new long[SIZES.length][3]; // Bubble, Merge, Quick
+        long[][] binResults  = new long[SIZES.length][2]; // Linear Search, Binary Search
 
         for (int s = 0; s < SIZES.length; s++) {
             List<PatientRecord> dataset = generateDataset(SIZES[s]);
             int midId = dataset.get(SIZES[s] / 2).id;
             System.out.printf("  Benchmarking %,d records...%n", SIZES[s]);
 
-            // Linked List
-            llResults[s][0] = avgLLInsert(dataset);
-            llResults[s][1] = avgLLSearch(dataset, midId);
-            llResults[s][2] = avgLLDelete(dataset, midId);
+            llResults[s][0]  = avgLLInsert(dataset);
+            llResults[s][1]  = avgLLSearch(dataset, midId);
+            llResults[s][2]  = avgLLDelete(dataset, midId);
 
-            // Array (ArrayList)
             arrResults[s][0] = avgArrayInsert(dataset);
             arrResults[s][1] = avgArraySearch(dataset, midId);
             arrResults[s][2] = avgArrayDelete(dataset, midId);
 
-            // Hash Table (HashMap)
-            htResults[s][0] = avgHashInsert(dataset);
-            htResults[s][1] = avgHashLookup(dataset, midId);
-            htResults[s][2] = avgHashDelete(dataset, midId);
+            htResults[s][0]  = avgHashInsert(dataset);
+            htResults[s][1]  = avgHashLookup(dataset, midId);
+            htResults[s][2]  = avgHashDelete(dataset, midId);
 
-            // Queue / Priority Queue
-            qResults[s][0] = avgQueueEnqueue(dataset);
-            qResults[s][1] = avgQueueDequeue(dataset);
-            qResults[s][2] = avgPQInsert(dataset);
-            qResults[s][3] = avgPQExtract(dataset);
+            qResults[s][0]   = avgQueueEnqueue(dataset);
+            qResults[s][1]   = avgQueueDequeue(dataset);
+            qResults[s][2]   = avgPQInsert(dataset);
+            qResults[s][3]   = avgPQExtract(dataset);
+
+            sortResults[s][0] = avgBubbleSort(dataset);
+            sortResults[s][1] = avgMergeSort(dataset);
+            sortResults[s][2] = avgQuickSort(dataset);
+
+            // Binary search requires a pre-sorted list (sorted by ID = natural order here)
+            List<PatientRecord> sorted = SortingModule.mergeSort(dataset, "id-not-a-field");
+            // dataset is generated with sequential IDs so it is already sorted by ID
+            binResults[s][0]  = avgLinearSearch(dataset, midId);
+            binResults[s][1]  = avgBinarySearch(dataset, midId);
         }
 
-        printTable("LINKED LIST",
-                new String[]{"Insert O(1)", "Search O(n)", "Delete O(n)"},
-                llResults);
+        StringBuilder sb = new StringBuilder();
+        appendTable(sb, "LINKED LIST",
+                new String[]{"Insert O(1)", "Search O(n)", "Delete O(n)"}, llResults);
+        appendTable(sb, "ARRAY (ArrayList)",
+                new String[]{"Insert O(1)*", "Search O(n)", "Delete O(n)"}, arrResults);
+        appendTable(sb, "HASH TABLE (HashMap)",
+                new String[]{"Insert O(1)", "Lookup O(1)", "Delete O(1)"}, htResults);
+        appendTable(sb, "QUEUE / PRIORITY QUEUE",
+                new String[]{"Enqueue O(1)", "Dequeue O(1)", "PQ Insert O(log n)", "PQ Extract O(log n)"}, qResults);
+        appendTable(sb, "SORTING ALGORITHMS",
+                new String[]{"Bubble O(n^2)", "Merge O(n log n)", "Quick O(n log n)*"}, sortResults);
+        appendTable(sb, "BINARY vs LINEAR SEARCH",
+                new String[]{"Linear O(n)", "Binary O(log n)"}, binResults);
 
-        printTable("ARRAY (ArrayList)",
-                new String[]{"Insert O(1)*", "Search O(n)", "Delete O(n)"},
-                arrResults);
+        String footer = "  * Each value = average of " + RUNS + " runs (nanoseconds)\n"
+                + "  * Array Insert amortized O(1) | Quick Sort worst-case O(n^2)";
+        sb.append(footer).append("\n");
 
-        printTable("HASH TABLE (HashMap)",
-                new String[]{"Insert O(1)", "Lookup O(1)", "Delete O(1)"},
-                htResults);
-
-        printTable("QUEUE / PRIORITY QUEUE",
-                new String[]{"Enqueue O(1)", "Dequeue O(1)", "PQ Insert O(log n)", "PQ Extract O(log n)"},
-                qResults);
-
-        System.out.println("  * Each value = average of " + RUNS + " runs (nanoseconds)");
-        System.out.println("  * Array Insert amortized O(1) due to dynamic resizing");
+        System.out.print(sb);
+        exportToFile(sb.toString());
     }
 
     // ─── Linked List ─────────────────────────────────────────────────────────────
@@ -225,32 +237,102 @@ public class BenchmarkRunner {
         return total / RUNS;
     }
 
-    // ─── Table printer ───────────────────────────────────────────────────────────
+    // ─── Sorting Algorithms ───────────────────────────────────────────────────────
 
-    private static void printTable(String title, String[] opNames, long[][] results) {
-        // Build header dynamically based on number of operations
-        int cols = opNames.length;
-        String colFmt = "+----------";
-        for (int i = 0; i < cols; i++) colFmt += "+----------------------";
-        String sep = colFmt + "+";
-
-        System.out.println("\n  [ " + title + " ]");
-        System.out.println("  " + sep);
-        System.out.print("  | " + String.format("%-8s", "Size"));
-        for (String op : opNames) System.out.print(" | " + String.format("%-20s", op));
-        System.out.println(" |");
-        System.out.println("  " + sep);
-        for (int s = 0; s < SIZES.length; s++) {
-            System.out.print("  | " + String.format("%,8d", SIZES[s]));
-            for (int o = 0; o < cols; o++) {
-                System.out.print(" | " + String.format("%,20d", results[s][o]));
-            }
-            System.out.println(" |");
+    private static long avgBubbleSort(List<PatientRecord> dataset) {
+        long total = 0;
+        for (int r = 0; r < RUNS; r++) {
+            long start = System.nanoTime();
+            SortingModule.bubbleSort(dataset, "name");
+            total += System.nanoTime() - start;
         }
-        System.out.println("  " + sep);
+        return total / RUNS;
     }
 
-    // ─── Synthetic dataset generator ────────────────────────────────────────────
+    private static long avgMergeSort(List<PatientRecord> dataset) {
+        long total = 0;
+        for (int r = 0; r < RUNS; r++) {
+            long start = System.nanoTime();
+            SortingModule.mergeSort(dataset, "name");
+            total += System.nanoTime() - start;
+        }
+        return total / RUNS;
+    }
+
+    private static long avgQuickSort(List<PatientRecord> dataset) {
+        long total = 0;
+        for (int r = 0; r < RUNS; r++) {
+            long start = System.nanoTime();
+            SortingModule.quickSort(dataset, "name");
+            total += System.nanoTime() - start;
+        }
+        return total / RUNS;
+    }
+
+    // ─── Binary vs Linear Search ─────────────────────────────────────────────────
+
+    private static long avgLinearSearch(List<PatientRecord> dataset, int targetId) {
+        long total = 0;
+        for (int r = 0; r < RUNS; r++) {
+            long start = System.nanoTime();
+            for (PatientRecord p : dataset) { if (p.id == targetId) break; }
+            total += System.nanoTime() - start;
+        }
+        return total / RUNS;
+    }
+
+    private static long avgBinarySearch(List<PatientRecord> dataset, int targetId) {
+        // dataset generated with sequential IDs so already sorted by ID
+        long total = 0;
+        for (int r = 0; r < RUNS; r++) {
+            long start = System.nanoTime();
+            SearchModule.binarySearchById(dataset, targetId);
+            total += System.nanoTime() - start;
+        }
+        return total / RUNS;
+    }
+
+    // ─── Table builder ───────────────────────────────────────────────────────────
+
+    private static void appendTable(StringBuilder sb, String title,
+                                    String[] opNames, long[][] results) {
+        int cols = opNames.length;
+        StringBuilder sep = new StringBuilder("+----------");
+        for (int i = 0; i < cols; i++) sep.append("+----------------------");
+        sep.append("+");
+
+        sb.append("\n  [ ").append(title).append(" ]\n");
+        sb.append("  ").append(sep).append("\n");
+        sb.append("  | ").append(String.format("%-8s", "Size"));
+        for (String op : opNames) sb.append(" | ").append(String.format("%-20s", op));
+        sb.append(" |\n");
+        sb.append("  ").append(sep).append("\n");
+        for (int s = 0; s < SIZES.length; s++) {
+            sb.append("  | ").append(String.format("%,8d", SIZES[s]));
+            for (int o = 0; o < cols; o++)
+                sb.append(" | ").append(String.format("%,20d", results[s][o]));
+            sb.append(" |\n");
+        }
+        sb.append("  ").append(sep).append("\n");
+    }
+
+    // ─── Export to file ───────────────────────────────────────────────────────────
+
+    private static void exportToFile(String content) {
+        try {
+            PrintWriter pw = new PrintWriter(new FileWriter("data/benchmark_results.txt"));
+            pw.println("Hospital Management System - Benchmark Results");
+            pw.println("Generated: " + new java.util.Date());
+            pw.println();
+            pw.print(content);
+            pw.close();
+            System.out.println("\n  Results saved to data/benchmark_results.txt");
+        } catch (IOException e) {
+            System.out.println("  (Could not save results to file: " + e.getMessage() + ")");
+        }
+    }
+
+    // ─── Synthetic dataset generator ─────────────────────────────────────────────
 
     private static List<PatientRecord> generateDataset(int size) {
         List<PatientRecord> list = new ArrayList<>(size);

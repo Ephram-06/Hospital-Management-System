@@ -69,6 +69,46 @@ public class PatientLinkedList {
         return results;
     }
 
+    public List<PatientRecord> searchByBloodType(String bloodType) {
+        List<PatientRecord> results = new ArrayList<>();
+        Node current = head;
+        while (current != null) {
+            if (current.data.bloodType.equalsIgnoreCase(bloodType))
+                results.add(current.data);
+            current = current.next;
+        }
+        return results;
+    }
+
+    public List<PatientRecord> searchByHospital(String hospital) {
+        List<PatientRecord> results = new ArrayList<>();
+        Node current = head;
+        while (current != null) {
+            if (current.data.hospital.toLowerCase().contains(hospital.toLowerCase()))
+                results.add(current.data);
+            current = current.next;
+        }
+        return results;
+    }
+
+    public List<PatientRecord> searchByTestResults(String testResults) {
+        List<PatientRecord> results = new ArrayList<>();
+        Node current = head;
+        while (current != null) {
+            if (current.data.testResults.equalsIgnoreCase(testResults))
+                results.add(current.data);
+            current = current.next;
+        }
+        return results;
+    }
+
+    public List<PatientRecord> toList() {
+        List<PatientRecord> list = new ArrayList<>();
+        Node current = head;
+        while (current != null) { list.add(current.data); current = current.next; }
+        return list;
+    }
+
     public void printAll() {
         Node current = head;
         if (current == null) { System.out.println("  (no patients)"); return; }
