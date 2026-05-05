@@ -51,9 +51,7 @@ public class BenchmarkRunner {
             sortResults[s][1] = avgMergeSort(dataset);
             sortResults[s][2] = avgQuickSort(dataset);
 
-            // Binary search requires a pre-sorted list (sorted by ID = natural order here)
-            List<PatientRecord> sorted = SortingModule.mergeSort(dataset, "id-not-a-field");
-            // dataset is generated with sequential IDs so it is already sorted by ID
+            // dataset generated with sequential IDs, so it is already sorted by ID
             binResults[s][0]  = avgLinearSearch(dataset, midId);
             binResults[s][1]  = avgBinarySearch(dataset, midId);
         }
