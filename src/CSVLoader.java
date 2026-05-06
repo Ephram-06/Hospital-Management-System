@@ -18,13 +18,13 @@ public class CSVLoader {
             String[] p = parseLine(line);
             if (p.length < 15) continue;
             try {
-                String name              = p[0].trim();
+                String name              = toTitleCase(p[0].trim());
                 int    age               = Integer.parseInt(p[1].trim());
                 String gender            = p[2].trim();
                 String bloodType         = p[3].trim();
                 String diagnosis         = p[4].trim();
                 String dateOfAdmission   = p[5].trim();
-                String doctorName        = p[6].trim();
+                String doctorName        = toTitleCase(p[6].trim());
                 String hospital          = p[7].trim();
                 String insuranceProvider = p[8].trim();
                 double billing           = Double.parseDouble(p[9].trim());
@@ -63,6 +63,19 @@ public class CSVLoader {
         }
         reader.close();
         return doctors;
+    }
+
+    private static String toTitleCase(String s) {
+        if (s == null || s.isEmpty()) return s;
+        String[] words = s.split(" ");
+        StringBuilder sb = new StringBuilder();
+        for (String w : words) {
+            if (w.isEmpty()) continue;
+            if (sb.length() > 0) sb.append(' ');
+            sb.append(Character.toUpperCase(w.charAt(0)));
+            sb.append(w.substring(1).toLowerCase());
+        }
+        return sb.toString();
     }
 
     private static String[] parseLine(String line) {

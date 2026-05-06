@@ -4,6 +4,7 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Scanner;
 
 public class BenchmarkRunner {
 
@@ -23,7 +24,7 @@ public class BenchmarkRunner {
 
     // ─── Called from the menu ────────────────────────────────────────────────────
 
-    public static void run(PatientLinkedList list, List<PatientRecord> allRecords) {
+    public static void run(PatientLinkedList list, List<PatientRecord> allRecords, Scanner sc) {
         // ── Loading screen ───────────────────────────────────────────────────────
         System.out.println();
         System.out.println(CYAN + BOLD + "  ╔══════════════════════════════════════════════╗" + RESET);
@@ -117,7 +118,12 @@ public class BenchmarkRunner {
         sb.append(footer).append("\n");
 
         System.out.print(sb);
-        exportToFile(sb.toString().replaceAll("\\u001B\\[[\\d;]*m", ""));
+        System.out.print("\n  " + YELLOW + "Save results to file? (y/n): " + RESET);
+        if ("y".equalsIgnoreCase(sc.nextLine().trim())) {
+            exportToFile(sb.toString().replaceAll("\\u001B\\[[\\d;]*m", ""));
+        } else {
+            System.out.println("  " + DIM + "Results not saved." + RESET);
+        }
     }
 
     // ─── Live progress bar ────────────────────────────────────────────────────────

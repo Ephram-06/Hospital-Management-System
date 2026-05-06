@@ -118,7 +118,7 @@ public class HospitalSystem {
             System.out.println(GREEN + BOLD + "  System ready. Welcome!" + RESET);
             System.out.println();
         } catch (IOException e) {
-            System.out.println("  " + RED + "Warning: Could not load CSV files — starting with empty system." + RESET);
+            System.out.println("  " + RED + "Warning: Could not load CSV files - starting with empty system." + RESET);
         }
         search = new SearchModule(patientList, doctorMap);
     }
@@ -146,9 +146,11 @@ public class HospitalSystem {
                 case "11": undoTreatment();              if (pauseOrExit(sc)) running = false; break;
                 case "12": viewTreatmentLog(sc);          if (pauseOrExit(sc)) running = false; break;
                 case "13": billingStatistics();          if (pauseOrExit(sc)) running = false; break;
-                case "14": BenchmarkRunner.run(patientList, allPatients);
+                case "14": BenchmarkRunner.run(patientList, allPatients, sc);
                                                          if (pauseOrExit(sc)) running = false; break;
                 case "15": sortPatients(sc);              if (pauseOrExit(sc)) running = false; break;
+                case "16": patientCard(sc);                if (pauseOrExit(sc)) running = false; break;
+                case "17": liveQueueMonitor(sc);           break;
                 case "0":  running = false; break;
                 default:   System.out.println("  Invalid option, try again.");
             }
@@ -192,6 +194,8 @@ public class HospitalSystem {
         System.out.println(CYAN + "║" + RESET + "   13. Billing Statistics                     " + CYAN + "║" + RESET);
         System.out.println(CYAN + "║" + RESET + "   14. Run Performance Benchmarks             " + CYAN + "║" + RESET);
         System.out.println(CYAN + "║" + RESET + "   15. Sort & Browse Patients                 " + CYAN + "║" + RESET);
+        System.out.println(CYAN + "║" + RESET + "   16. View Patient Detail                    " + CYAN + "║" + RESET);
+        System.out.println(CYAN + "║" + RESET + "   17. Live Queue Monitor                     " + CYAN + "║" + RESET);
         System.out.println(CYAN + "║" + RESET + RED   + "   0.  Exit                                   " + RESET + CYAN + "║" + RESET);
         System.out.println(CYAN + BOLD + "╚══════════════════════════════════════════════╝" + RESET);
         System.out.println(DIM + "  [ Search O(n) linear  │  Binary search O(log n)  │  Heap insert/extract O(log n) ]" + RESET);
@@ -600,6 +604,76 @@ public class HospitalSystem {
         System.out.printf("  Normal      : %5d patients  |  avg $%,.2f%n", normCount, normCount > 0 ? normTotal / normCount : 0);
         System.out.printf("  Abnormal    : %5d patients  |  avg $%,.2f%n", abnCount,  abnCount  > 0 ? abnTotal  / abnCount  : 0);
         System.out.printf("  Inconclusive: %5d patients  |  avg $%,.2f%n", incCount,  incCount  > 0 ? incTotal  / incCount  : 0);
+    }
+
+    // Looks up a patient by ID and displays all 16 fields in a formatted card.
+    // Admission type and test results are color-coded (red/yellow/green).
+    private void patientCard(Scanner sc) {
+        System.out.print("  Patient ID: ");
+        try {
+            int id = Integer.parseInt(sc.nextLine().trim());
+            PatientRecord p = search.findPatientById(id);
+            if (p == null) { System.out.println("  " + RED + "Patient #" + id + " not found." + RESET); return; }
+            String admColor = p.admissionType.equalsIgnoreCase("emergency") ? RED
+                            : p.admissionType.equalsIgnoreCase("urgent") ? YELLOW : GREEN;
+            String resColor = "Normal".equalsIgnoreCase(p.testResults) ? GREEN
+                            : "Abnormal".equalsIgnoreCase(p.testResults) ? RED : YELLOW;
+            System.out.println();
+            System.out.println(CYAN + BOLD + "  ╔═══════════════════════════════════════════════════╗" + RESET);
+            System.out.printf( CYAN + BOLD + "  ║" + RESET + WHITE + BOLD + "  Patient #%-5d  %-30s   " + RESET + CYAN + BOLD + "║%n" + RESET, p.id, p.name);
+            System.out.println(CYAN + BOLD + "  ╠═══════════════════════════════════════════════════╣" + RESET);
+            System.out.printf( CYAN + "  ║" + RESET + "  Age        : " + WHITE + "%-10d" + RESET + "  Gender    : " + WHITE + "%-12s" + RESET + CYAN + "║%n" + RESET, p.age, p.gender);
+            System.out.printf( CYAN + "  ║" + RESET + "  Blood Type : " + WHITE + "%-10s" + RESET + "  Room #    : " + WHITE + "%-12d" + RESET + CYAN + "║%n" + RESET, p.bloodType, p.roomNumber);
+            System.out.printf( CYAN + "  ║" + RESET + "  Diagnosis  : " + YELLOW + "%-36s" + RESET + CYAN + "║%n" + RESET, p.diagnosis);
+            System.out.printf( CYAN + "  ║" + RESET + "  Admission  : " + admColor + "%-36s" + RESET + CYAN + "║%n" + RESET, p.admissionType);
+            System.out.printf( CYAN + "  ║" + RESET + "  Admitted   : " + WHITE + "%-36s" + RESET + CYAN + "║%n" + RESET, p.dateOfAdmission);
+            System.out.printf( CYAN + "  ║" + RESET + "  Discharged : " + WHITE + "%-36s" + RESET + CYAN + "║%n" + RESET, p.dischargeDate);
+            System.out.println(CYAN + "  ╟───────────────────────────────────────────────────╢" + RESET);
+            System.out.printf( CYAN + "  ║" + RESET + "  Doctor     : " + WHITE + "%-36s" + RESET + CYAN + "║%n" + RESET, p.doctorName);
+            System.out.printf( CYAN + "  ║" + RESET + "  Hospital   : " + WHITE + "%-36s" + RESET + CYAN + "║%n" + RESET, p.hospital);
+            System.out.printf( CYAN + "  ║" + RESET + "  Insurance  : " + WHITE + "%-36s" + RESET + CYAN + "║%n" + RESET, p.insuranceProvider);
+            System.out.printf( CYAN + "  ║" + RESET + "  Billing    : " + GREEN + "$%-,35.2f" + RESET + CYAN + "║%n" + RESET, p.billingAmount);
+            System.out.println(CYAN + "  ╟───────────────────────────────────────────────────╢" + RESET);
+            System.out.printf( CYAN + "  ║" + RESET + "  Medication : " + WHITE + "%-36s" + RESET + CYAN + "║%n" + RESET, p.medication);
+            System.out.printf( CYAN + "  ║" + RESET + "  Test Result: " + resColor + "%-36s" + RESET + CYAN + "║%n" + RESET, p.testResults);
+            System.out.println(CYAN + BOLD + "  ╚═══════════════════════════════════════════════════╝" + RESET);
+        } catch (NumberFormatException e) { System.out.println("  Invalid ID."); }
+    }
+
+    // Polls the emergency queue, regular queue, and treatment stack every 2 seconds.
+    // Clears the screen each refresh and exits when the user presses Enter.
+    private void liveQueueMonitor(Scanner sc) {
+        System.out.println(YELLOW + "  Live Queue Monitor - press ENTER to stop" + RESET);
+        try { Thread.sleep(600); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+        while (true) {
+            PatientRecord nextEmg = emergencyQ.isEmpty()       ? null : emergencyQ.peek();
+            PatientRecord nextReg = appointmentQueue.isEmpty() ? null : appointmentQueue.peek();
+            String topTreat = treatmentStack.isEmpty() ? "(none)" : treatmentStack.peek();
+            if (topTreat.length() > 33) topTreat = topTreat.substring(0, 30) + "...";
+
+            System.out.print("\033[2J\033[H");
+            System.out.println(CYAN + BOLD + "  ╔══════════════════════════════════════════════╗" + RESET);
+            System.out.println(CYAN + BOLD + "  ║" + RESET + WHITE + BOLD + "           LIVE QUEUE MONITOR                 " + RESET + CYAN + BOLD + "║" + RESET);
+            System.out.println(CYAN + BOLD + "  ╠══════════════════════════════════════════════╣" + RESET);
+            System.out.printf( CYAN + "  ║" + RESET + "  " + RED + BOLD + "Emergency Queue" + RESET + " : " + RED + "%-5d" + RESET + " patients waiting    " + CYAN + "║%n" + RESET, emergencyQ.size());
+            System.out.printf( CYAN + "  ║" + RESET + "  Next up       : " + YELLOW + "%-28s" + RESET + CYAN + "║%n" + RESET, nextEmg != null ? nextEmg.name : DIM + "(empty)" + RESET);
+            System.out.println(CYAN + "  ╟──────────────────────────────────────────────╢" + RESET);
+            System.out.printf( CYAN + "  ║" + RESET + "  " + GREEN + BOLD + "Regular Queue" + RESET + "   : " + GREEN + "%-5d" + RESET + " patients waiting    " + CYAN + "║%n" + RESET, appointmentQueue.size());
+            System.out.printf( CYAN + "  ║" + RESET + "  Next up       : " + YELLOW + "%-28s" + RESET + CYAN + "║%n" + RESET, nextReg != null ? nextReg.name : DIM + "(empty)" + RESET);
+            System.out.println(CYAN + "  ╟──────────────────────────────────────────────╢" + RESET);
+            System.out.printf( CYAN + "  ║" + RESET + "  " + WHITE + BOLD + "Treatment Stack" + RESET + "  : " + WHITE + "%-5d" + RESET + " logged actions     " + CYAN + "║%n" + RESET, treatmentStack.size());
+            System.out.printf( CYAN + "  ║" + RESET + "  Last action   : " + WHITE + "%-28s" + RESET + CYAN + "║%n" + RESET, topTreat);
+            System.out.println(CYAN + BOLD + "  ╚══════════════════════════════════════════════╝" + RESET);
+            System.out.println(DIM + "  Refreshing every 2s  |  Press ENTER to exit" + RESET);
+
+            try {
+                long end = System.currentTimeMillis() + 2000;
+                while (System.currentTimeMillis() < end) {
+                    if (System.in.available() > 0) { sc.nextLine(); return; }
+                    Thread.sleep(100);
+                }
+            } catch (Exception e) { return; }
+        }
     }
 
     private void sortPatients(Scanner sc) {
