@@ -16,13 +16,14 @@ public class HospitalSystem {
     // ─── Entry Point ────────────────────────────────────────────────────────────
 
     public static void main(String[] args) {
-        printBanner();
+        Scanner sc = new Scanner(System.in);
+        printBanner(sc);
         HospitalSystem hms = new HospitalSystem();
         hms.loadData();
-        hms.run();
+        hms.run(sc);
     }
 
-    private static void printBanner() {
+    private static void printBanner(Scanner sc) {
         System.out.println();
         System.out.println("  ╔══════════════════════════════════════════════════╗");
         System.out.println("  ║                                                  ║");
@@ -37,6 +38,9 @@ public class HospitalSystem {
             System.out.print(".");
         }
         System.out.println();
+        System.out.println();
+        System.out.print("  Press Enter to continue...");
+        sc.nextLine();
     }
 
     // ─── Data Loading ────────────────────────────────────────────────────────────
@@ -74,8 +78,7 @@ public class HospitalSystem {
 
     // ─── Main Menu Loop ──────────────────────────────────────────────────────────
 
-    private void run() {
-        Scanner sc = new Scanner(System.in);
+    private void run(Scanner sc) {
         boolean running = true;
         while (running) {
             printMenu();
