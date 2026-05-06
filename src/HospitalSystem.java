@@ -16,9 +16,27 @@ public class HospitalSystem {
     // ─── Entry Point ────────────────────────────────────────────────────────────
 
     public static void main(String[] args) {
+        printBanner();
         HospitalSystem hms = new HospitalSystem();
         hms.loadData();
         hms.run();
+    }
+
+    private static void printBanner() {
+        System.out.println();
+        System.out.println("  ╔══════════════════════════════════════════════════╗");
+        System.out.println("  ║                                                  ║");
+        System.out.println("  ║      HOSPITAL MANAGEMENT SYSTEM                  ║");
+        System.out.println("  ║      COSC 214 — Data Structures & Algorithms     ║");
+        System.out.println("  ║                                                  ║");
+        System.out.println("  ╚══════════════════════════════════════════════════╝");
+        System.out.println();
+        System.out.print("  Initializing system");
+        for (int i = 0; i < 3; i++) {
+            try { Thread.sleep(350); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+            System.out.print(".");
+        }
+        System.out.println();
     }
 
     // ─── Data Loading ────────────────────────────────────────────────────────────
@@ -27,7 +45,7 @@ public class HospitalSystem {
         try {
             List<Doctor> doctors = CSVLoader.loadDoctors("data/doctors.csv");
             for (Doctor d : doctors) doctorMap.addDoctor(d);
-            System.out.println("  Loaded " + doctors.size() + " doctors.");
+            System.out.println("  ✓  " + doctors.size() + " doctors loaded.");
 
             allPatients.addAll(CSVLoader.loadPatients("data/patients.csv"));
             nextId = allPatients.size() + 1;
@@ -44,7 +62,10 @@ public class HospitalSystem {
                     appointmentQueue.enqueue(p);
                 }
             }
-            System.out.println("  Loaded " + allPatients.size() + " patients.");
+            System.out.println("  ✓  " + allPatients.size() + " patients loaded.");
+            System.out.println();
+            System.out.println("  System ready. Welcome!");
+            System.out.println();
         } catch (IOException e) {
             System.out.println("  Warning: Could not load CSV files — starting with empty system.");
         }
