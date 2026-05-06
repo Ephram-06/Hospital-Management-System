@@ -1,4 +1,5 @@
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * Min-heap priority queue for Emergency and Urgent patients.
@@ -87,5 +88,12 @@ public class EmergencyPriorityQueue {
         Arrays.sort(copy, (a, b) -> Integer.compare(priority(a), priority(b)));
         for (int i = 0; i < copy.length; i++)
             System.out.println("  " + (i + 1) + ". [Priority " + priority(copy[i]) + "] " + copy[i]);
+    }
+
+    // Return all records sorted by priority as a List for paged browsing
+    public List<PatientRecord> toList() {
+        PatientRecord[] copy = Arrays.copyOf(heap, size);
+        Arrays.sort(copy, (a, b) -> Integer.compare(priority(a), priority(b)));
+        return new java.util.ArrayList<>(java.util.Arrays.asList(copy));
     }
 }

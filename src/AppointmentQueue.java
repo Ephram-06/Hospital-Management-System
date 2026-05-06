@@ -1,3 +1,5 @@
+import java.util.List;
+
 /**
  * FIFO queue for regular (Elective) patient appointments.
  * Uses a singly linked list with front and rear pointers so both
@@ -53,5 +55,13 @@ public class AppointmentQueue {
             System.out.println("  " + pos++ + ". " + current.data);
             current = current.next;
         }
+    }
+
+    // Return all records as a List for paged browsing
+    public List<PatientRecord> toList() {
+        List<PatientRecord> list = new java.util.ArrayList<>(size);
+        Node current = front;
+        while (current != null) { list.add(current.data); current = current.next; }
+        return list;
     }
 }

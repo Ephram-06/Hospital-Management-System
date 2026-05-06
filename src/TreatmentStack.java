@@ -1,4 +1,5 @@
 import java.util.Date;
+import java.util.List;
 
 /**
  * LIFO stack for logging treatment actions with timestamps.
@@ -54,5 +55,16 @@ public class TreatmentStack {
             System.out.println("  " + i++ + ". " + current.action + "  [" + new Date(current.timestamp) + "]");
             current = current.next;
         }
+    }
+
+    // Return all logged actions as a List (most recent first) for paged browsing
+    public List<String> toList() {
+        List<String> list = new java.util.ArrayList<>(size);
+        Node current = top;
+        while (current != null) {
+            list.add(current.action + "  [" + new Date(current.timestamp) + "]");
+            current = current.next;
+        }
+        return list;
     }
 }

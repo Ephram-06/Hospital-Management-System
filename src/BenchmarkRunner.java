@@ -7,6 +7,15 @@ import java.util.List;
 
 public class BenchmarkRunner {
 
+    // ─── ANSI Colors ─────────────────────────────────────────────────────────────
+    private static final String RESET  = "\u001B[0m";
+    private static final String BOLD   = "\u001B[1m";
+    private static final String DIM    = "\u001B[2m";
+    private static final String CYAN   = "\u001B[36m";
+    private static final String GREEN  = "\u001B[32m";
+    private static final String YELLOW = "\u001B[33m";
+    private static final String WHITE  = "\u001B[97m";
+
     private static final int   RUNS  = 5;
     private static final int[] SIZES = {1000, 2000, 5000, 10000};
 
@@ -15,46 +24,79 @@ public class BenchmarkRunner {
     // ─── Called from the menu ────────────────────────────────────────────────────
 
     public static void run(PatientLinkedList list, List<PatientRecord> allRecords) {
-        System.out.println("\n  Running benchmarks across 4 data sizes (" + RUNS + " runs each)...");
-        System.out.println("  Time complexity: O(n)=linear  O(1)=constant  O(log n)=logarithmic\n");
+        // ── Loading screen ───────────────────────────────────────────────────────
+        System.out.println();
+        System.out.println(CYAN + BOLD + "  ╔══════════════════════════════════════════════╗" + RESET);
+        System.out.println(CYAN + BOLD + "  ║" + RESET + WHITE + BOLD + "       PERFORMANCE BENCHMARK SUITE            " + RESET + CYAN + BOLD + "║" + RESET);
+        System.out.println(CYAN + BOLD + "  ╠══════════════════════════════════════════════╣" + RESET);
+        System.out.println(CYAN + BOLD + "  ║" + RESET + DIM  + "   4 data sizes  |  " + RUNS + " runs each  |  ns timing " + RESET + CYAN + BOLD + "║" + RESET);
+        System.out.println(CYAN + BOLD + "  ╚══════════════════════════════════════════════╝" + RESET);
+        System.out.println();
 
-        long[][] llResults   = new long[SIZES.length][3]; // Insert, Search, Delete
-        long[][] arrResults  = new long[SIZES.length][3]; // Insert, Search, Delete
-        long[][] htResults   = new long[SIZES.length][3]; // Insert, Lookup, Delete
-        long[][] qResults    = new long[SIZES.length][4]; // Enqueue, Dequeue, PQ Insert, PQ Extract
-        long[][] sortResults = new long[SIZES.length][3]; // Bubble, Merge, Quick
-        long[][] binResults  = new long[SIZES.length][2]; // Linear Search, Binary Search
+        String[] stages = {
+            "Linked List  ", "Array        ", "Hash Table   ",
+            "Queue / PQ   ", "Sorting      ", "Search       "
+        };
+        int totalStages = stages.length * SIZES.length;
+        int done = 0;
+        int barWidth = 30;
+
+        System.out.println(YELLOW + "  Initializing benchmark engine..." + RESET);
+        try { Thread.sleep(300); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+        System.out.println();
+
+        long[][] llResults   = new long[SIZES.length][3];
+        long[][] arrResults  = new long[SIZES.length][3];
+        long[][] htResults   = new long[SIZES.length][3];
+        long[][] qResults    = new long[SIZES.length][4];
+        long[][] sortResults = new long[SIZES.length][3];
+        long[][] binResults  = new long[SIZES.length][2];
 
         for (int s = 0; s < SIZES.length; s++) {
             List<PatientRecord> dataset = generateDataset(SIZES[s]);
             int midId = dataset.get(SIZES[s] / 2).id;
-            System.out.printf("  Benchmarking %,d records...%n", SIZES[s]);
 
-            llResults[s][0]  = avgLLInsert(dataset);
-            llResults[s][1]  = avgLLSearch(dataset, midId);
-            llResults[s][2]  = avgLLDelete(dataset, midId);
+            // Linked List
+            llResults[s][0] = avgLLInsert(dataset);
+            llResults[s][1] = avgLLSearch(dataset, midId);
+            llResults[s][2] = avgLLDelete(dataset, midId);
+            done++; printBar(stages[0], SIZES[s], done, totalStages, barWidth);
 
+            // Array
             arrResults[s][0] = avgArrayInsert(dataset);
             arrResults[s][1] = avgArraySearch(dataset, midId);
             arrResults[s][2] = avgArrayDelete(dataset, midId);
+            done++; printBar(stages[1], SIZES[s], done, totalStages, barWidth);
 
-            htResults[s][0]  = avgHashInsert(dataset);
-            htResults[s][1]  = avgHashLookup(dataset, midId);
-            htResults[s][2]  = avgHashDelete(dataset, midId);
+            // Hash Table
+            htResults[s][0] = avgHashInsert(dataset);
+            htResults[s][1] = avgHashLookup(dataset, midId);
+            htResults[s][2] = avgHashDelete(dataset, midId);
+            done++; printBar(stages[2], SIZES[s], done, totalStages, barWidth);
 
-            qResults[s][0]   = avgQueueEnqueue(dataset);
-            qResults[s][1]   = avgQueueDequeue(dataset);
-            qResults[s][2]   = avgPQInsert(dataset);
-            qResults[s][3]   = avgPQExtract(dataset);
+            // Queue
+            qResults[s][0] = avgQueueEnqueue(dataset);
+            qResults[s][1] = avgQueueDequeue(dataset);
+            qResults[s][2] = avgPQInsert(dataset);
+            qResults[s][3] = avgPQExtract(dataset);
+            done++; printBar(stages[3], SIZES[s], done, totalStages, barWidth);
 
+            // Sorting
             sortResults[s][0] = avgBubbleSort(dataset);
             sortResults[s][1] = avgMergeSort(dataset);
             sortResults[s][2] = avgQuickSort(dataset);
+            done++; printBar(stages[4], SIZES[s], done, totalStages, barWidth);
 
-            // dataset generated with sequential IDs, so it is already sorted by ID
-            binResults[s][0]  = avgLinearSearch(dataset, midId);
-            binResults[s][1]  = avgBinarySearch(dataset, midId);
+            // Search
+            binResults[s][0] = avgLinearSearch(dataset, midId);
+            binResults[s][1] = avgBinarySearch(dataset, midId);
+            done++; printBar(stages[5], SIZES[s], done, totalStages, barWidth);
         }
+
+        System.out.println("\r  " + GREEN + BOLD + "[DONE] All benchmarks complete!" + RESET
+                + "                                        ");
+        System.out.println();
+        try { Thread.sleep(400); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
 
         StringBuilder sb = new StringBuilder();
         appendTable(sb, "LINKED LIST",
@@ -70,12 +112,26 @@ public class BenchmarkRunner {
         appendTable(sb, "BINARY vs LINEAR SEARCH",
                 new String[]{"Linear O(n)", "Binary O(log n)"}, binResults);
 
-        String footer = "  * Each value = average of " + RUNS + " runs (nanoseconds)\n"
-                + "  * Array Insert amortized O(1) | Quick Sort worst-case O(n^2)";
+        String footer = GREEN + "  * Each value = average of " + RUNS + " runs (nanoseconds)" + RESET + "\n"
+                + DIM + "  * Array Insert amortized O(1) | Quick Sort worst-case O(n^2)" + RESET;
         sb.append(footer).append("\n");
 
         System.out.print(sb);
-        exportToFile(sb.toString());
+        exportToFile(sb.toString().replaceAll("\\u001B\\[[\\d;]*m", ""));
+    }
+
+    // ─── Live progress bar ────────────────────────────────────────────────────────
+
+    private static void printBar(String stage, int size, int done, int total, int barWidth) {
+        int filled = (int)((double) done / total * barWidth);
+        StringBuilder bar = new StringBuilder();
+        for (int i = 0; i < filled; i++) bar.append('█');
+        for (int i = filled; i < barWidth; i++) bar.append('░');
+        int pct = (int)((double) done / total * 100);
+        System.out.printf("\r  " + CYAN + "[" + GREEN + "%s" + CYAN + "]" + RESET
+                + "  %s  " + DIM + "n=%,d" + RESET + "  %3d%%",
+                bar, stage, size, pct);
+        System.out.flush();
     }
 
     // ─── Linked List ─────────────────────────────────────────────────────────────
@@ -299,19 +355,19 @@ public class BenchmarkRunner {
         for (int i = 0; i < cols; i++) sep.append("+----------------------");
         sep.append("+");
 
-        sb.append("\n  [ ").append(title).append(" ]\n");
-        sb.append("  ").append(sep).append("\n");
-        sb.append("  | ").append(String.format("%-8s", "Size"));
-        for (String op : opNames) sb.append(" | ").append(String.format("%-20s", op));
-        sb.append(" |\n");
-        sb.append("  ").append(sep).append("\n");
+        sb.append("\n  " + CYAN + BOLD + "[ " + WHITE + title + CYAN + " ]" + RESET + "\n");
+        sb.append("  " + CYAN).append(sep).append(RESET + "\n");
+        sb.append("  " + CYAN + "|" + RESET + YELLOW + " ").append(String.format("%-8s", "Size"));
+        for (String op : opNames) sb.append(CYAN + " | " + RESET + YELLOW).append(String.format("%-20s", op));
+        sb.append(CYAN + " |" + RESET + "\n");
+        sb.append("  " + CYAN).append(sep).append(RESET + "\n");
         for (int s = 0; s < SIZES.length; s++) {
-            sb.append("  | ").append(String.format("%,8d", SIZES[s]));
+            sb.append("  " + CYAN + "|" + RESET + WHITE + " ").append(String.format("%,8d", SIZES[s]));
             for (int o = 0; o < cols; o++)
-                sb.append(" | ").append(String.format("%,20d", results[s][o]));
-            sb.append(" |\n");
+                sb.append(CYAN + " | " + RESET).append(String.format("%,20d", results[s][o]));
+            sb.append(CYAN + " |" + RESET + "\n");
         }
-        sb.append("  ").append(sep).append("\n");
+        sb.append("  " + CYAN).append(sep).append(RESET + "\n");
     }
 
     // ─── Export to file ───────────────────────────────────────────────────────────
@@ -324,7 +380,7 @@ public class BenchmarkRunner {
             pw.println();
             pw.print(content);
             pw.close();
-            System.out.println("\n  Results saved to data/benchmark_results.txt");
+            System.out.println("\n  " + GREEN + "Results saved to data/benchmark_results.txt" + RESET);
         } catch (IOException e) {
             System.out.println("  (Could not save results to file: " + e.getMessage() + ")");
         }
