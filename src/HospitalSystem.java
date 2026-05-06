@@ -506,8 +506,27 @@ public class HospitalSystem {
     // ─── Treatment Log ────────────────────────────────────────────────────────────
 
     private void logTreatment(Scanner sc) {
+        System.out.print("  Patient ID or name (leave blank to skip): ");
+        String patientRef = sc.nextLine().trim();
+        String prefix = "";
+        if (!patientRef.isEmpty()) {
+            PatientRecord found = null;
+            try {
+                int id = Integer.parseInt(patientRef);
+                found = search.findPatientById(id);
+            } catch (NumberFormatException e) {
+                List<PatientRecord> matches = search.findPatientsByName(patientRef);
+                if (!matches.isEmpty()) found = matches.get(0);
+            }
+            if (found != null) {
+                prefix = "[Patient #" + found.id + " - " + found.name + "]  ";
+                System.out.println("  " + CYAN + "Linked to: " + RESET + found.name + " (ID #" + found.id + ")");
+            } else {
+                System.out.println("  " + YELLOW + "Patient not found — logging without patient link." + RESET);
+            }
+        }
         System.out.print("  Treatment action: ");
-        String action = sc.nextLine().trim();
+        String action = prefix + sc.nextLine().trim();
         treatmentStack.push(action);
         System.out.println("  " + GREEN + "Logged: " + RESET + action);
     }
@@ -628,40 +647,136 @@ public class HospitalSystem {
         System.out.println(CYAN + BOLD + "  ╚═══════════════════════════════════════════════════╝" + RESET);
     }
 
-    // Polls the emergency queue, regular queue, and treatment stack every 2 seconds.
-    // Clears the screen each refresh and exits when the user presses Enter.
+    // Live simulation: auto-dispatches patients to real CSV doctors, animates treatment,
+    // shows a rolling feed of recent dispatches. Press Enter to exit.
     private void liveQueueMonitor(Scanner sc) {
-        System.out.println(YELLOW + "  Live Queue Monitor - press ENTER to stop" + RESET);
-        try { Thread.sleep(600); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
-        while (true) {
-            PatientRecord nextEmg = emergencyQ.isEmpty()       ? null : emergencyQ.peek();
-            PatientRecord nextReg = appointmentQueue.isEmpty() ? null : appointmentQueue.peek();
-            String topTreat = treatmentStack.isEmpty() ? "(none)" : treatmentStack.peek();
-            if (topTreat.length() > 33) topTreat = topTreat.substring(0, 30) + "...";
-
-            System.out.print("\033[2J\033[H");
-            System.out.println(CYAN + BOLD + "  ╔══════════════════════════════════════════════╗" + RESET);
-            System.out.println(CYAN + BOLD + "  ║" + RESET + WHITE + BOLD + "           LIVE QUEUE MONITOR                 " + RESET + CYAN + BOLD + "║" + RESET);
-            System.out.println(CYAN + BOLD + "  ╠══════════════════════════════════════════════╣" + RESET);
-            System.out.printf( CYAN + "  ║" + RESET + "  " + RED + BOLD + "Emergency Queue" + RESET + " : " + RED + "%-5d" + RESET + " patients waiting    " + CYAN + "║%n" + RESET, emergencyQ.size());
-            System.out.printf( CYAN + "  ║" + RESET + "  Next up       : " + YELLOW + "%-28s" + RESET + CYAN + "║%n" + RESET, nextEmg != null ? nextEmg.name : DIM + "(empty)" + RESET);
-            System.out.println(CYAN + "  ╟──────────────────────────────────────────────╢" + RESET);
-            System.out.printf( CYAN + "  ║" + RESET + "  " + GREEN + BOLD + "Regular Queue" + RESET + "   : " + GREEN + "%-5d" + RESET + " patients waiting    " + CYAN + "║%n" + RESET, appointmentQueue.size());
-            System.out.printf( CYAN + "  ║" + RESET + "  Next up       : " + YELLOW + "%-28s" + RESET + CYAN + "║%n" + RESET, nextReg != null ? nextReg.name : DIM + "(empty)" + RESET);
-            System.out.println(CYAN + "  ╟──────────────────────────────────────────────╢" + RESET);
-            System.out.printf( CYAN + "  ║" + RESET + "  " + WHITE + BOLD + "Treatment Stack" + RESET + "  : " + WHITE + "%-5d" + RESET + " logged actions     " + CYAN + "║%n" + RESET, treatmentStack.size());
-            System.out.printf( CYAN + "  ║" + RESET + "  Last action   : " + WHITE + "%-28s" + RESET + CYAN + "║%n" + RESET, topTreat);
-            System.out.println(CYAN + BOLD + "  ╚══════════════════════════════════════════════╝" + RESET);
-            System.out.println(DIM + "  Refreshing every 2s  |  Press ENTER to exit" + RESET);
-
-            try {
-                long end = System.currentTimeMillis() + 2000;
-                while (System.currentTimeMillis() < end) {
-                    if (System.in.available() > 0) { sc.nextLine(); return; }
-                    Thread.sleep(100);
-                }
-            } catch (Exception e) { return; }
+        // Only use doctors loaded from CSV (they have real availableHours, not "N/A")
+        List<Doctor> docs = new ArrayList<>();
+        for (Doctor d : doctorMap.getAllDoctors())
+            if (!"N/A".equals(d.availableHours)) docs.add(d);
+        if (docs.isEmpty()) {
+            List<Doctor> tmp = new ArrayList<>(doctorMap.getAllDoctors());
+            for (int i = 0; i < Math.min(4, tmp.size()); i++) docs.add(tmp.get(i));
         }
+
+        List<String[]> recent = new ArrayList<>(); // {patientName, doctorName, admType}
+        int docIdx = 0, tick = 0;
+        String[] sp = {"|", "/", "-", "\\"};
+
+        System.out.println(YELLOW + "  Starting Live Queue Monitor — simulation running..." + RESET);
+        try { Thread.sleep(500); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+
+        while (true) {
+            tick++;
+            try { if (System.in.available() > 0) { sc.nextLine(); return; } } catch (Exception e) { return; }
+
+            int eSize = emergencyQ.size();
+            int rSize = appointmentQueue.size();
+            int tSize = treatmentStack.size();
+            PatientRecord peekE = emergencyQ.isEmpty()       ? null : emergencyQ.peek();
+            PatientRecord peekR = appointmentQueue.isEmpty() ? null : appointmentQueue.peek();
+
+            // Pull next patient
+            PatientRecord treat = null;
+            boolean isEmerg = false;
+            if (!emergencyQ.isEmpty())            { treat = emergencyQ.extractMin(); isEmerg = true; }
+            else if (!appointmentQueue.isEmpty()) { treat = appointmentQueue.dequeue(); }
+            Doctor doc = (treat != null && !docs.isEmpty()) ? docs.get(docIdx++ % docs.size()) : null;
+
+            // ── Dashboard ─────────────────────────────────────────────
+            System.out.print("\033[2J\033[H");
+            System.out.println(CYAN + BOLD + "  ╔═══════════════════════════════════════════════════╗" + RESET);
+            System.out.printf( CYAN + BOLD + "  ║" + RESET + WHITE + BOLD + "   LIVE QUEUE MONITOR                  Tick #%-5d " + RESET + CYAN + BOLD + "║%n" + RESET, tick);
+            System.out.println(CYAN + BOLD + "  ╠═══════════════════════════════════════════════════╣" + RESET);
+
+            String eBar  = lqmBar(eSize, 40000, 8);
+            String eInfo = peekE != null ? lqmClip(peekE.name, 16) + " [" + peekE.admissionType.toUpperCase().charAt(0) + "]" : "(empty)";
+            System.out.printf(CYAN + "  ║" + RESET + "  " + RED + BOLD + "Emergency/Urgent" + RESET + " : " + RED + "%-6s" + RESET + " [" + RED + "%-8s" + RESET + "]     " + CYAN + "        ║%n" + RESET,
+                String.format("%,d", eSize), eBar);
+            System.out.printf(CYAN + "  ║" + RESET + "  Next -> " + YELLOW + "%-37s" + RESET + CYAN + "     ║%n" + RESET, eInfo);
+
+            System.out.println(CYAN + "  ╟───────────────────────────────────────────────────╢" + RESET);
+
+            String rBar  = lqmBar(rSize, 40000, 8);
+            String rInfo = peekR != null ? lqmClip(peekR.name, 16) + " [E]" : "(empty)";
+            System.out.printf(CYAN + "  ║" + RESET + "  " + GREEN + BOLD + "Regular (Elective)" + RESET + ": " + GREEN + "%-6s" + RESET + " [" + GREEN + "%-8s" + RESET + "]     " + CYAN + "       ║%n" + RESET,
+                String.format("%,d", rSize), rBar);
+            System.out.printf(CYAN + "  ║" + RESET + "  Next -> " + YELLOW + "%-37s" + RESET + CYAN + "     ║%n" + RESET, rInfo);
+
+            System.out.println(CYAN + "  ╟───────────────────────────────────────────────────╢" + RESET);
+            System.out.printf( CYAN + "  ║" + RESET + "  " + WHITE + BOLD + "Treatment Stack  " + RESET + ": " + WHITE + "%-6s" + RESET + " logged actions   " + CYAN + "      ║%n" + RESET,
+                String.format("%,d", tSize));
+
+            System.out.println(CYAN + "  ╠═══════════════════════════════════════════════════╣" + RESET);
+            System.out.println(CYAN + "  ║" + RESET + YELLOW + BOLD + "  RECENTLY DISPATCHED                         " + RESET + CYAN + "     ║" + RESET);
+            System.out.println(CYAN + "  ╟───────────────────────────────────────────────────╢" + RESET);
+            for (int i = 0; i < 5; i++) {
+                if (i < recent.size()) {
+                    String[] r = recent.get(i);
+                    boolean hi = r[2].startsWith("E") || r[2].startsWith("U");
+                    String aCol = hi ? RED : GREEN;
+                    String line = String.format("%-16s -> Dr.%-14s [%-9s]", lqmClip(r[0], 16), lqmClip(r[1], 14), r[2]);
+                    System.out.printf(CYAN + "  ║  " + RESET + aCol + "%-44s" + RESET + CYAN + "║%n" + RESET, line);
+                } else {
+                    System.out.printf(CYAN + "  ║  %-44s" + CYAN + "     ║%n" + RESET, "");
+                }
+            }
+            System.out.println(CYAN + BOLD + "  ╚═══════════════════════════════════════════════════╝" + RESET);
+            System.out.println(DIM + "  Simulation running  |  Press ENTER to exit" + RESET);
+            System.out.println();
+
+            // ── Treatment animation (~1.5s) ────────────────────────────
+            if (treat != null && doc != null) {
+                String aCol = isEmerg ? RED : GREEN;
+                int steps = 50, bw = 20;
+                for (int s = 0; s <= steps; s++) {
+                    try { if (System.in.available() > 0) { sc.nextLine(); return; } } catch (Exception e2) {}
+                    int f = (int)((double) s / steps * bw);
+                    StringBuilder bar = new StringBuilder();
+                    for (int j = 0; j < f;  j++) bar.append('\u2588');
+                    for (int j = f; j < bw; j++) bar.append('\u2591');
+                    int pct = (int)((double) s / steps * 100);
+                    System.out.print("\r  " + aCol + sp[s % 4] + RESET
+                        + "  Treating " + YELLOW + lqmClip(treat.name, 18) + RESET
+                        + "  [" + aCol + bar + RESET + "] " + String.format("%3d%%", pct)
+                        + "  " + CYAN + "Dr. " + lqmClip(doc.name, 14) + RESET + "     ");
+                    System.out.flush();
+                    try { Thread.sleep(200); } catch (InterruptedException e2) { Thread.currentThread().interrupt(); }
+                }
+                String entry = "[Patient #" + treat.id + " - " + treat.name + "]  Treated by Dr. " + doc.name;
+                treatmentStack.push(entry);
+                recent.add(0, new String[]{ treat.name, doc.name, treat.admissionType.toUpperCase() });
+                if (recent.size() > 5) recent.remove(recent.size() - 1);
+                System.out.println("\r  " + GREEN + BOLD + "+" + RESET + "  " + GREEN
+                    + lqmClip(treat.name, 18) + " -> Dr. " + lqmClip(doc.name, 14) + RESET + "     ");
+                try { Thread.sleep(200); } catch (InterruptedException e2) { Thread.currentThread().interrupt(); }
+            } else {
+                System.out.print("  " + DIM + "All queues empty — standing by..." + RESET + "    ");
+                System.out.flush();
+                try {
+                    long end = System.currentTimeMillis() + 2000;
+                    while (System.currentTimeMillis() < end) {
+                        if (System.in.available() > 0) { sc.nextLine(); return; }
+                        Thread.sleep(100);
+                    }
+                } catch (Exception e2) { return; }
+            }
+        }
+    }
+
+    private static String lqmBar(int current, int max, int width) {
+        int f = max <= 0 ? 0 : (int)((double) current / max * width);
+        f = Math.min(f, width);
+        if (f == 0 && current > 0) f = 1;
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < f; i++) sb.append('\u2588');
+        for (int i = f; i < width; i++) sb.append('\u2591');
+        return sb.toString();
+    }
+
+    private static String lqmClip(String s, int max) {
+        if (s == null || s.isEmpty()) return "";
+        return s.length() <= max ? s : s.substring(0, max - 1) + "~";
     }
 
     private void sortPatients(Scanner sc) {
