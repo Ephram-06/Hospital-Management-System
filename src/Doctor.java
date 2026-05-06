@@ -1,3 +1,8 @@
+/**
+ * Represents a doctor in the hospital system.
+ * Loaded from data/doctors.csv at startup; also auto-registered when
+ * a patient record references a doctor name not already in the HashMap.
+ */
 public class Doctor {
     String name;
     String specialization;

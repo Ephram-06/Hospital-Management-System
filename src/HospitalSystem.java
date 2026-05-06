@@ -693,7 +693,7 @@ public class HospitalSystem {
             String eInfo = peekE != null ? lqmClip(peekE.name, 16) + " [" + peekE.admissionType.toUpperCase().charAt(0) + "]" : "(empty)";
             System.out.printf(CYAN + "  ║" + RESET + "  " + RED + BOLD + "Emergency/Urgent" + RESET + " : " + RED + "%-6s" + RESET + " [" + RED + "%-8s" + RESET + "]     " + CYAN + "        ║%n" + RESET,
                 String.format("%,d", eSize), eBar);
-            System.out.printf(CYAN + "  ║" + RESET + "  Next -> " + YELLOW + "%-37s" + RESET + CYAN + "     ║%n" + RESET, eInfo);
+            System.out.printf(CYAN + "  ║" + RESET + "  Next -> " + YELLOW + "%-37s" + RESET + CYAN + "    ║%n" + RESET, eInfo);
 
             System.out.println(CYAN + "  ╟───────────────────────────────────────────────────╢" + RESET);
 
@@ -701,7 +701,7 @@ public class HospitalSystem {
             String rInfo = peekR != null ? lqmClip(peekR.name, 16) + " [E]" : "(empty)";
             System.out.printf(CYAN + "  ║" + RESET + "  " + GREEN + BOLD + "Regular (Elective)" + RESET + ": " + GREEN + "%-6s" + RESET + " [" + GREEN + "%-8s" + RESET + "]     " + CYAN + "       ║%n" + RESET,
                 String.format("%,d", rSize), rBar);
-            System.out.printf(CYAN + "  ║" + RESET + "  Next -> " + YELLOW + "%-37s" + RESET + CYAN + "     ║%n" + RESET, rInfo);
+            System.out.printf(CYAN + "  ║" + RESET + "  Next -> " + YELLOW + "%-37s" + RESET + CYAN + "    ║%n" + RESET, rInfo);
 
             System.out.println(CYAN + "  ╟───────────────────────────────────────────────────╢" + RESET);
             System.out.printf( CYAN + "  ║" + RESET + "  " + WHITE + BOLD + "Treatment Stack  " + RESET + ": " + WHITE + "%-6s" + RESET + " logged actions   " + CYAN + "      ║%n" + RESET,

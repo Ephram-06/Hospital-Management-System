@@ -1,3 +1,8 @@
+/**
+ * Data model for a single patient record — 16 fields matching the Kaggle
+ * healthcare dataset schema. IDs are auto-assigned sequentially on load
+ * (the CSV does not include an ID column).
+ */
 public class PatientRecord {
     int    id;
     String name;
