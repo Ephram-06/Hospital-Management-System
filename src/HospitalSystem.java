@@ -49,6 +49,7 @@ public class HospitalSystem {
         }
         System.out.println();
         System.out.println();
+        RobotAnimation.playStartup();
         System.out.print("  " + YELLOW + "Press Enter to continue..." + RESET + " ");
         sc.nextLine();
     }
@@ -149,8 +150,7 @@ public class HospitalSystem {
                 case "14": BenchmarkRunner.run(patientList, allPatients, sc);
                                                          if (pauseOrExit(sc)) running = false; break;
                 case "15": sortPatients(sc);              if (pauseOrExit(sc)) running = false; break;
-                case "16": patientCard(sc);                if (pauseOrExit(sc)) running = false; break;
-                case "17": liveQueueMonitor(sc);           break;
+                case "16": liveQueueMonitor(sc);           break;
                 case "0":  running = false; break;
                 default:   System.out.println("  Invalid option, try again.");
             }
@@ -194,8 +194,7 @@ public class HospitalSystem {
         System.out.println(CYAN + "║" + RESET + "   13. Billing Statistics                     " + CYAN + "║" + RESET);
         System.out.println(CYAN + "║" + RESET + "   14. Run Performance Benchmarks             " + CYAN + "║" + RESET);
         System.out.println(CYAN + "║" + RESET + "   15. Sort & Browse Patients                 " + CYAN + "║" + RESET);
-        System.out.println(CYAN + "║" + RESET + "   16. View Patient Detail                    " + CYAN + "║" + RESET);
-        System.out.println(CYAN + "║" + RESET + "   17. Live Queue Monitor                     " + CYAN + "║" + RESET);
+        System.out.println(CYAN + "║" + RESET + "   16. Live Queue Monitor                     " + CYAN + "║" + RESET);
         System.out.println(CYAN + "║" + RESET + RED   + "   0.  Exit                                   " + RESET + CYAN + "║" + RESET);
         System.out.println(CYAN + BOLD + "╚══════════════════════════════════════════════╝" + RESET);
         System.out.println(DIM + "  [ Search O(n) linear  │  Binary search O(log n)  │  Heap insert/extract O(log n) ]" + RESET);
@@ -301,15 +300,8 @@ public class HospitalSystem {
                 try {
                     int id = Integer.parseInt(sc.nextLine().trim());
                     PatientRecord r = search.findPatientById(id);
-                    if (r != null) {
-                        System.out.println("  Found: " + r);
-                        System.out.printf("    Blood Type: %s | Hospital: %s | Room: %d%n", r.bloodType, r.hospital, r.roomNumber);
-                        System.out.printf("    Admitted: %s | Discharged: %s%n", r.dateOfAdmission, r.dischargeDate);
-                        System.out.printf("    Medication: %s | Test Results: %s%n", r.medication, r.testResults);
-                        System.out.printf("    Insurance: %s%n", r.insuranceProvider);
-                        Doctor d = search.findDoctorByName(r.doctorName);
-                        if (d != null) System.out.println("    Assigned Doctor: " + d);
-                    } else System.out.println("  Not found.");
+                    if (r != null) printPatientCard(r);
+                    else System.out.println("  Not found.");
                 } catch (NumberFormatException e) { System.out.println("  Invalid ID."); }
                 break;
             }
@@ -478,9 +470,11 @@ public class HospitalSystem {
     private void processNextAppointment() {
         if (!emergencyQ.isEmpty()) {
             PatientRecord p = emergencyQ.extractMin();
+            RobotAnimation.playFetchPatient(p.name, true);
             System.out.println("  " + RED + BOLD + "Serving [PRIORITY - " + p.admissionType.toUpperCase() + "]: " + RESET + p);
         } else if (!appointmentQueue.isEmpty()) {
             PatientRecord p = appointmentQueue.dequeue();
+            RobotAnimation.playFetchPatient(p.name, false);
             System.out.println("  " + GREEN + "Serving [REGULAR]: " + RESET + p);
         } else {
             System.out.println("  " + RED + "No patients in any queue." + RESET);
@@ -606,38 +600,32 @@ public class HospitalSystem {
         System.out.printf("  Inconclusive: %5d patients  |  avg $%,.2f%n", incCount,  incCount  > 0 ? incTotal  / incCount  : 0);
     }
 
-    // Looks up a patient by ID and displays all 16 fields in a formatted card.
+    // Displays all 16 fields for a patient in a formatted color-coded card.
     // Admission type and test results are color-coded (red/yellow/green).
-    private void patientCard(Scanner sc) {
-        System.out.print("  Patient ID: ");
-        try {
-            int id = Integer.parseInt(sc.nextLine().trim());
-            PatientRecord p = search.findPatientById(id);
-            if (p == null) { System.out.println("  " + RED + "Patient #" + id + " not found." + RESET); return; }
-            String admColor = p.admissionType.equalsIgnoreCase("emergency") ? RED
-                            : p.admissionType.equalsIgnoreCase("urgent") ? YELLOW : GREEN;
-            String resColor = "Normal".equalsIgnoreCase(p.testResults) ? GREEN
-                            : "Abnormal".equalsIgnoreCase(p.testResults) ? RED : YELLOW;
-            System.out.println();
-            System.out.println(CYAN + BOLD + "  ╔═══════════════════════════════════════════════════╗" + RESET);
-            System.out.printf( CYAN + BOLD + "  ║" + RESET + WHITE + BOLD + "  Patient #%-5d  %-30s   " + RESET + CYAN + BOLD + "║%n" + RESET, p.id, p.name);
-            System.out.println(CYAN + BOLD + "  ╠═══════════════════════════════════════════════════╣" + RESET);
-            System.out.printf( CYAN + "  ║" + RESET + "  Age        : " + WHITE + "%-10d" + RESET + "  Gender    : " + WHITE + "%-12s" + RESET + CYAN + "║%n" + RESET, p.age, p.gender);
-            System.out.printf( CYAN + "  ║" + RESET + "  Blood Type : " + WHITE + "%-10s" + RESET + "  Room #    : " + WHITE + "%-12d" + RESET + CYAN + "║%n" + RESET, p.bloodType, p.roomNumber);
-            System.out.printf( CYAN + "  ║" + RESET + "  Diagnosis  : " + YELLOW + "%-36s" + RESET + CYAN + "║%n" + RESET, p.diagnosis);
-            System.out.printf( CYAN + "  ║" + RESET + "  Admission  : " + admColor + "%-36s" + RESET + CYAN + "║%n" + RESET, p.admissionType);
-            System.out.printf( CYAN + "  ║" + RESET + "  Admitted   : " + WHITE + "%-36s" + RESET + CYAN + "║%n" + RESET, p.dateOfAdmission);
-            System.out.printf( CYAN + "  ║" + RESET + "  Discharged : " + WHITE + "%-36s" + RESET + CYAN + "║%n" + RESET, p.dischargeDate);
-            System.out.println(CYAN + "  ╟───────────────────────────────────────────────────╢" + RESET);
-            System.out.printf( CYAN + "  ║" + RESET + "  Doctor     : " + WHITE + "%-36s" + RESET + CYAN + "║%n" + RESET, p.doctorName);
-            System.out.printf( CYAN + "  ║" + RESET + "  Hospital   : " + WHITE + "%-36s" + RESET + CYAN + "║%n" + RESET, p.hospital);
-            System.out.printf( CYAN + "  ║" + RESET + "  Insurance  : " + WHITE + "%-36s" + RESET + CYAN + "║%n" + RESET, p.insuranceProvider);
-            System.out.printf( CYAN + "  ║" + RESET + "  Billing    : " + GREEN + "$%-,35.2f" + RESET + CYAN + "║%n" + RESET, p.billingAmount);
-            System.out.println(CYAN + "  ╟───────────────────────────────────────────────────╢" + RESET);
-            System.out.printf( CYAN + "  ║" + RESET + "  Medication : " + WHITE + "%-36s" + RESET + CYAN + "║%n" + RESET, p.medication);
-            System.out.printf( CYAN + "  ║" + RESET + "  Test Result: " + resColor + "%-36s" + RESET + CYAN + "║%n" + RESET, p.testResults);
-            System.out.println(CYAN + BOLD + "  ╚═══════════════════════════════════════════════════╝" + RESET);
-        } catch (NumberFormatException e) { System.out.println("  Invalid ID."); }
+    private void printPatientCard(PatientRecord p) {
+        String admColor = p.admissionType.equalsIgnoreCase("emergency") ? RED
+                        : p.admissionType.equalsIgnoreCase("urgent") ? YELLOW : GREEN;
+        String resColor = "Normal".equalsIgnoreCase(p.testResults) ? GREEN
+                        : "Abnormal".equalsIgnoreCase(p.testResults) ? RED : YELLOW;
+        System.out.println();
+        System.out.println(CYAN + BOLD + "  ╔═══════════════════════════════════════════════════╗" + RESET);
+        System.out.printf( CYAN + BOLD + "  ║" + RESET + WHITE + BOLD + "  Patient #%-5d  %-30s   " + RESET + CYAN + BOLD + "║%n" + RESET, p.id, p.name);
+        System.out.println(CYAN + BOLD + "  ╠═══════════════════════════════════════════════════╣" + RESET);
+        System.out.printf( CYAN + "  ║" + RESET + "  Age        : " + WHITE + "%-10d" + RESET + "  Gender    : " + WHITE + "%-12s" + RESET + CYAN + "║%n" + RESET, p.age, p.gender);
+        System.out.printf( CYAN + "  ║" + RESET + "  Blood Type : " + WHITE + "%-10s" + RESET + "  Room #    : " + WHITE + "%-12d" + RESET + CYAN + "║%n" + RESET, p.bloodType, p.roomNumber);
+        System.out.printf( CYAN + "  ║" + RESET + "  Diagnosis  : " + YELLOW + "%-36s" + RESET + CYAN + "║%n" + RESET, p.diagnosis);
+        System.out.printf( CYAN + "  ║" + RESET + "  Admission  : " + admColor + "%-36s" + RESET + CYAN + "║%n" + RESET, p.admissionType);
+        System.out.printf( CYAN + "  ║" + RESET + "  Admitted   : " + WHITE + "%-36s" + RESET + CYAN + "║%n" + RESET, p.dateOfAdmission);
+        System.out.printf( CYAN + "  ║" + RESET + "  Discharged : " + WHITE + "%-36s" + RESET + CYAN + "║%n" + RESET, p.dischargeDate);
+        System.out.println(CYAN + "  ╟───────────────────────────────────────────────────╢" + RESET);
+        System.out.printf( CYAN + "  ║" + RESET + "  Doctor     : " + WHITE + "%-36s" + RESET + CYAN + "║%n" + RESET, p.doctorName);
+        System.out.printf( CYAN + "  ║" + RESET + "  Hospital   : " + WHITE + "%-36s" + RESET + CYAN + "║%n" + RESET, p.hospital);
+        System.out.printf( CYAN + "  ║" + RESET + "  Insurance  : " + WHITE + "%-36s" + RESET + CYAN + "║%n" + RESET, p.insuranceProvider);
+        System.out.printf( CYAN + "  ║" + RESET + "  Billing    : " + GREEN + "$%-,35.2f" + RESET + CYAN + "║%n" + RESET, p.billingAmount);
+        System.out.println(CYAN + "  ╟───────────────────────────────────────────────────╢" + RESET);
+        System.out.printf( CYAN + "  ║" + RESET + "  Medication : " + WHITE + "%-36s" + RESET + CYAN + "║%n" + RESET, p.medication);
+        System.out.printf( CYAN + "  ║" + RESET + "  Test Result: " + resColor + "%-36s" + RESET + CYAN + "║%n" + RESET, p.testResults);
+        System.out.println(CYAN + BOLD + "  ╚═══════════════════════════════════════════════════╝" + RESET);
     }
 
     // Polls the emergency queue, regular queue, and treatment stack every 2 seconds.

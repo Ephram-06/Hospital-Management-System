@@ -1,7 +1,9 @@
 # COSC 214 – Data Structures and Algorithms
 ## Project: Hospital Management System
 
-**Team Members:** Ephram Mbapte · Mohamed Kargbo · Nia Allen · Nicholas Armenta
+**Team Members:** Ephram Mbapte · Mohamed Kargbo · Nia Allen · Nicholas Armenta  
+**Course:** COSC 214 – Data Structures and Algorithms  
+**Date:** May 5, 2026
 
 ---
 
@@ -10,16 +12,8 @@
 1. Clone the repository from GitHub
 2. Open the project in VS Code and run `HospitalSystem.java`
 
-The system auto-loads **10,000 real patient records** from `data/patients.csv` (Kaggle healthcare dataset) and 4 doctors from `data/doctors.csv` on startup.
 
----
-
-## Design Document
-
-| | |
-|---|---|
-| **Course** | COSC 214 – Data Structures and Algorithms |
-| **Date** | April 19, 2026 |
+The system auto-loads **~55,500 real patient records** from `data/patients.csv` (Kaggle healthcare dataset) and doctors from `data/doctors.csv` on startup.
 
 ---
 
@@ -27,15 +21,17 @@ The system auto-loads **10,000 real patient records** from `data/patients.csv` (
 
 **Title:** Hospital Management System (HMS)
 
-**Objective:** Build a fully functional CLI-based hospital management system that demonstrates the practical use of core data structures on a real-world dataset.
+**Objective:** Build a fully functional CLI-based hospital management system that demonstrates the practical use of core data structures on a real-world, large-scale dataset.
 
-**Dataset:** [Kaggle Healthcare Dataset](https://www.kaggle.com/) — 10,000 patient records, 15 columns per row, loaded from `data/patients.csv` at startup.
+**Dataset:** [Kaggle Healthcare Dataset](https://www.kaggle.com/) — ~55,500 patient records, 15 columns per row, loaded from `data/patients.csv` at startup.
+
+On launch, an ASCII robot animation boots the system with a live progress display, then walks across the terminal painting the welcome message letter by letter.
 
 ---
 
 ## 2. Data Model
 
-Each patient is represented as a `PatientRecord` object with 16 fields matching the Kaggle schema (ID is auto-generated on load):
+Each patient is represented as a `PatientRecord` object with 16 fields:
 
 | Field | Type | Description |
 |---|---|---|
@@ -50,7 +46,7 @@ Each patient is represented as a `PatientRecord` object with 16 fields matching 
 | `hospital` | `String` | Hospital name |
 | `insuranceProvider` | `String` | Insurance company |
 | `billingAmount` | `double` | Total billed amount ($) |
-| `roomNumber` | `int` | Assigned room |
+| `roomNumber` | `int` | Assigned room number |
 | `admissionType` | `String` | Emergency / Urgent / Elective |
 | `dischargeDate` | `String` | Discharge date (MM/DD/YYYY) |
 | `medication` | `String` | Prescribed medication |
@@ -66,9 +62,7 @@ Each doctor is represented as a `Doctor` object:
 
 ---
 
-## 3. Menu Overview (15 Options)
-
-When you run the program you get a menu with these options:
+## 3. Menu Overview (16 Options)
 
 ```
 ╔══════════════════════════════════════════════╗
@@ -98,6 +92,7 @@ When you run the program you get a menu with these options:
 ║   13. Billing Statistics                     ║
 ║   14. Run Performance Benchmarks             ║
 ║   15. Sort & Browse Patients                 ║
+║   16. Live Queue Monitor                     ║
 ║   0.  Exit                                   ║
 ╚══════════════════════════════════════════════╝
 ```
@@ -110,7 +105,7 @@ When you run the program you get a menu with these options:
 
 `PatientLinkedList.java` — custom singly linked list, no Java collections used internally.
 
-Patients are inserted, searched, and deleted through the linked list. It was chosen because patient records are frequently added and removed — linked lists handle this without shifting elements like an array would.
+Patients are inserted, searched, and deleted through the linked list. Chosen because patient records are frequently added and removed — linked lists handle this without shifting elements like an array would.
 
 | Operation | Time Complexity |
 |---|---|
@@ -125,7 +120,7 @@ Patients are inserted, searched, and deleted through the linked list. It was cho
 
 `DoctorHashMap.java` — wraps `HashMap<String, Doctor>` keyed by doctor name.
 
-A HashMap gives O(1) average lookup, which is critical when checking doctor assignments while processing thousands of patient records on load.
+A HashMap gives O(1) average lookup, critical when checking doctor assignments while processing thousands of patient records on load.
 
 | Operation | Time Complexity |
 |---|---|
@@ -140,7 +135,7 @@ A HashMap gives O(1) average lookup, which is critical when checking doctor assi
 `AppointmentQueue.java` — standard FIFO queue for Elective patients.  
 `EmergencyPriorityQueue.java` — min-heap by admission priority for Emergency/Urgent patients.
 
-When option 8 (Process Next Appointment) is chosen, the system always drains the emergency heap first before touching the regular queue.
+Option 8 (Process Next Appointment) always drains the emergency heap first. The robot animation (`RobotAnimation.java`) dispatches an animated robot to "fetch" the patient — emergency mode triggers a red flashing `!!! EMERGENCY DISPATCH !!!` header and the robot zooms at double speed.
 
 | Admission Type | Priority |
 |---|---|
@@ -172,10 +167,10 @@ Each logged treatment action is pushed onto the stack. Option 11 pops the top en
 
 `SearchModule.java` — facade over the linked list and doctor map.
 
-**Linear search** (O(n)) over the linked list for: Name, Diagnosis, Blood Type, Hospital, Test Results.  
-**Binary search** (O(log n)) for Patient ID — `binarySearchById()` on a sorted list.
+**Linear search** O(n) over the linked list for: Name, Diagnosis, Blood Type, Hospital, Test Results.  
+**Binary search** O(log n) for Patient ID — `binarySearchById()` on a sorted list.
 
-Results > 20 are automatically paginated so the terminal doesn't get flooded.
+Results > 20 are automatically paginated. Searching by ID also displays a full color-coded patient card with all 16 fields.
 
 ---
 
@@ -198,13 +193,13 @@ All three sort by a chosen field (Name, Age, or Billing Amount). The original li
 Option 13 prints a full billing report including:
 - Total / average / highest / lowest billing
 - Count of Emergency / Urgent / Elective admissions
-- **Average billing broken down by test results** (Normal / Abnormal / Inconclusive)
+- Average billing broken down by test results (Normal / Abnormal / Inconclusive)
 
 ---
 
 ### Feature 8 – Performance Benchmarks
 
-`BenchmarkRunner.java` — benchmarks all data structures at sizes 100, 500, 1000, 5000, and 10000.
+`BenchmarkRunner.java` — benchmarks all data structures at sizes 100, 500, 1000, 5000, and 10,000.
 
 Runs each operation 5 times and reports the average in nanoseconds. Prints 6 separate tables:
 
@@ -215,7 +210,18 @@ Runs each operation 5 times and reports the average in nanoseconds. Prints 6 sep
 5. Sorting Algorithms — Bubble, Merge, Quick
 6. Linear vs Binary Search comparison
 
-Results are also saved to `data/benchmark_results.txt`.
+Results are optionally saved to `data/benchmark_results.txt`.
+
+---
+
+### Feature 9 – Live Queue Monitor (Option 16)
+
+Real-time dashboard that refreshes every 2 seconds showing live counts of:
+- Regular appointment queue size
+- Emergency priority queue size
+- Treatment stack depth
+
+Press Enter at any time to exit back to the menu.
 
 ---
 
@@ -237,6 +243,7 @@ Results are also saved to `data/benchmark_results.txt`.
 ```
 +------------------------------------------------------------------+
 |                Hospital Management System (HMS)                  |
+|                    RobotAnimation (startup)                      |
 +------------------------------------------------------------------+
       |              |               |              |          |
       v              v               v              v          v
@@ -250,12 +257,12 @@ Results are also saved to `data/benchmark_results.txt`.
              v
       [Search Module]
        Binary Search (by ID, sorted list)
-       Linear Scan  (by name / diagnosis / blood type / hospital / test results)
+       Linear Scan  (name / diagnosis / blood type / hospital / test results)
              |
              v
       [Benchmark Runner]
        Timed tests at 5 dataset sizes
-       6 result tables → printed + saved to file
+       6 result tables → printed + optionally saved to file
 ```
 
 ---
@@ -349,312 +356,10 @@ binarySearchById(sortedList, targetId):
 
 | Team Member | Primary Responsibility |
 |---|---|
-| Ephram Mbapte | Priority Queue, benchmarking framework, sorting module, search extensions |
+| Ephram Mbapte | Priority Queue, benchmarking framework, sorting module, search extensions, robot animation |
 | Mohamed Kargbo | Linked List (patient records) |
 | Nia Allen | HashMap (doctor management + search module) |
 | Nicholas Armenta | Array, Queue, Stack implementations |
 
 
-| | |
-|---|---|
-| **Course** | COSC 214 – Data Structures and Algorithms |
-| **Date** | April 19, 2026 |
-
-**Team Members:**
-- Ephram Mbapte
-- Mohamed Kargbo
-- Nia Allen
-- Nicholas Armenta
-
 ---
-
-## 1. Project Overview
-
-**Title:** Hospital Management System (HMS)
-
-**Objective:** The goal of this project is to manage hospital operations efficiently, including patient information, appointments, doctor schedules, and emergency prioritization.
-
-**Description:** The system will allow hospital staff to manage patient records, schedule appointments, organize doctor availability, and prioritize emergency cases. The system supports real-time data access and efficient updates through the use of appropriate data structures for each task.
-
----
-
-## 2. Data Model
-
-Each patient in the system is represented as a `PatientRecord` object. A unique ID is generated automatically (sequentially starting at 1) during loading since the dataset does not provide one.
-
-| Field | Type | Description |
-|---|---|---|
-| `id` | `int` | Auto-generated unique identifier |
-| `name` | `String` | Full name of the patient |
-| `age` | `int` | Patient age |
-| `gender` | `String` | Male or Female |
-| `diagnosis` | `String` | Medical condition / diagnosis |
-| `admissionType` | `String` | Emergency, Urgent, or Elective |
-| `doctorId` | `int` | ID of the assigned doctor |
-| `billingAmount` | `double` | Total billed amount |
-
-Each doctor is represented as a `Doctor` object:
-
-| Field | Type | Description |
-|---|---|---|
-| `doctorId` | `int` | Unique doctor identifier |
-| `name` | `String` | Full name |
-| `specialization` | `String` | Area of medical expertise |
-| `availableHours` | `String` | Hours available for appointments |
-
-**Java Class Definitions:**
-
-```java
-class PatientRecord {
-    int id;
-    String name;
-    int age;
-    String gender;
-    String diagnosis;
-    String admissionType;
-    int doctorId;
-    double billingAmount;
-}
-
-class Doctor {
-    int doctorId;
-    String name;
-    String specialization;
-    String availableHours;
-}
-```
-
----
-
-## 3. Core Features and Data Structure Selection
-
-### Feature 1 – Patient Record Management
-**Description:** Store and retrieve complete patient details including name, age, diagnosis, and treatment history.
-
-**Data Structure: Linked List**
-A linked list is ideal here because patient records are frequently inserted and deleted as patients are admitted and discharged. Unlike arrays, linked lists do not require shifting elements on insertion or deletion, making them efficient for dynamic, frequently changing data.
-
-| Operation | Time Complexity |
-|---|---|
-| Insert | O(1) (insert at head) |
-| Search by ID | O(n) |
-| Delete by ID | O(n) |
-| Traverse | O(n) |
-
----
-
-### Feature 2 – Appointment Scheduling
-**Description:** Handle patient appointments in first-come-first-served order, with priority given to emergency cases.
-
-**Data Structure: Queue (standard) + Heap / Priority Queue (emergency)**
-A standard Queue enforces FIFO ordering for regular appointments. A Priority Queue (min-heap) is used alongside it to ensure emergency patients are always processed before urgent and elective cases regardless of arrival order.
-
-**Priority Rules:**
-| Admission Type | Priority Level |
-|---|---|
-| Emergency | 1 – Highest |
-| Urgent | 2 – Medium |
-| Elective | 3 – Lowest |
-
-| Operation | Queue Time | Priority Queue Time |
-|---|---|---|
-| Enqueue | O(1) | O(log n) |
-| Dequeue | O(1) | O(log n) |
-| Traverse | O(n) | O(n) |
-
----
-
-### Feature 3 – Doctor Management
-**Description:** Store and retrieve doctor information (specialization, availability, assigned patients) using a unique doctor ID as the lookup key.
-
-**Data Structure: Hash Table (HashMap)**
-A HashMap provides near-constant time access by doctor ID, which is critical when quickly checking doctor availability during appointment scheduling. This is far more efficient than scanning a list.
-
-| Operation | Time Complexity |
-|---|---|
-| Insert | O(1) average |
-| Search by doctorId | O(1) average |
-| Delete | O(1) average |
-| Traverse | O(n) |
-
----
-
-### Feature 4 – Emergency Patient Prioritization
-**Description:** Ensure emergency patients are always handled before non-emergency patients, based on severity level.
-
-**Data Structure: Heap (Priority Queue)**
-A max-heap (or min-heap with priority values) re-orders patients on every insertion so the highest-severity patient is always at the front of the queue. This cannot be efficiently achieved with a standard array or linked list without re-sorting.
-
-```
-Priority comparator:
-  Emergency  = 1  (highest — dequeued first)
-  Urgent     = 2
-  Elective   = 3  (lowest)
-```
-
-| Operation | Time Complexity |
-|---|---|
-| Insert (enqueue) | O(log n) |
-| Get highest priority | O(1) |
-| Remove highest priority | O(log n) |
-
----
-
-### Feature 5 – Search Functionality
-**Description:** Look up patients, doctors, or appointments by various parameters (ID, name, diagnosis).
-
-**Data Structure: Hash Table for ID lookup / Linked List for sequential search**
-- Searching by unique ID (patient or doctor): HashMap provides O(1) average lookup.
-- Searching by name or diagnosis (non-unique fields): requires a linear scan through the linked list of patient records — O(n).
-
----
-
-### Feature 6 – Treatment Log (Undo/Redo)
-**Description:** Maintain a log of treatment actions performed on a patient so that staff can undo the most recent action if a mistake is made.
-
-**Data Structure: Stack**
-A stack (LIFO) is the natural fit for undo/redo functionality. Each treatment action is pushed onto the stack. Undoing an action pops the most recent entry. This is used in the patient record management module.
-
-| Operation | Time Complexity |
-|---|---|
-| Push (log action) | O(1) |
-| Pop (undo) | O(1) |
-| Peek (view last action) | O(1) |
-
----
-
-## 4. Data Structure Summary
-
-| Data Structure | Feature Used In | Why It Was Chosen |
-|---|---|---|
-| Array | Static hospital department list | Fixed size, fast index access O(1) |
-| Linked List | Patient record management | Dynamic insertion/deletion without shifting |
-| Stack | Treatment log / undo | LIFO order matches undo behavior |
-| Queue | Regular appointment scheduling | FIFO ensures fair order of service |
-| Hash Table | Doctor management, ID search | O(1) average lookup by unique key |
-| Heap / Priority Queue | Emergency prioritization | Always serves highest priority patient first |
-
----
-
-## 5. System Architecture
-
-```
-+---------------------------------------------------------------+
-|               Hospital Management System (HMS)                |
-+---------------------------------------------------------------+
-         |              |               |              |
-         v              v               v              v
- [Patient Records] [Appointments]  [Doctor Mgmt]  [Treatment Log]
-  Linked List       Queue +          HashMap         Stack
-                    Priority Queue
-         |              |               |              |
-         +------+--------+--------------+--------------+
-                |
-                v
-         [Search Module]
-          HashMap (by ID)
-          Linked List scan (by name/diagnosis)
-                |
-                v
-         [Benchmarking Module]
-          System.nanoTime() — insert / search / delete
-          5 runs per operation, average reported
-```
-
-**Data Flow:**
-1. CSV file is loaded and each row becomes a `PatientRecord` object
-2. Records are inserted into the Linked List for general management
-3. Records are also inserted into the HashMap keyed by ID for fast lookup
-4. Admission queue routes patients — regular to Queue, emergency to Priority Queue
-5. Treatment actions are pushed to the patient's Stack log
-6. Doctor records are stored and accessed via HashMap
-
----
-
-## 6. Pseudocode for Core Operations
-
-### Patient Record – Linked List
-
-```
-insertRecord(head, record):
-    newNode = Node(record)
-    newNode.next = head
-    head = newNode
-
-searchRecord(head, id):
-    current = head
-    while current != null:
-        if current.data.id == id:
-            return current.data
-        current = current.next
-    return null
-
-deleteRecord(head, id):
-    if head.data.id == id:
-        head = head.next
-        return
-    current = head
-    while current.next != null:
-        if current.next.data.id == id:
-            current.next = current.next.next
-            return
-        current = current.next
-```
-
-### Doctor Management – HashMap
-
-```
-addDoctor(map, doctor):
-    map.put(doctor.doctorId, doctor)
-
-getDoctor(map, doctorId):
-    return map.get(doctorId)
-
-removeDoctor(map, doctorId):
-    map.remove(doctorId)
-```
-
-### Appointment Queue
-
-```
-scheduleAppointment(queue, record):
-    queue.enqueue(record)
-
-processNext(queue):
-    return queue.dequeue()
-```
-
-### Emergency Priority Queue
-
-```
-addEmergency(pq, record):
-    pq.insert(record)   // heapified by admissionType priority
-
-serveNext(pq):
-    return pq.extractMin()  // always returns highest priority
-```
-
-### Treatment Log – Stack
-
-```
-logTreatment(stack, action):
-    stack.push(action)
-
-undoLastTreatment(stack):
-    if stack is not empty:
-        return stack.pop()
-    return null
-```
-
----
-
-## 7. Team Responsibilities
-
-| Team Member | Responsibility |
-|---|---|
-| Ephram Mbapte | Priority Queue + Heap (emergency prioritization) + benchmarking framework |
-| Mohamed Kargbo | Linked List (patient record management) |
-| Nia Allen | HashMap (doctor management + search) |
-| Nicholas Armenta | Array + Queue + Stack implementations |
-
-All members collaborate on the design document, performance analysis report, and final presentation.
