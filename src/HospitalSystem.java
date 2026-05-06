@@ -87,7 +87,7 @@ public class HospitalSystem {
                 case "2":  listAllPatients(sc);           if (pauseOrExit(sc)) running = false; break;
                 case "3":  searchPatient(sc);            if (pauseOrExit(sc)) running = false; break;
                 case "4":  removePatient(sc);                                       break;
-                case "5":  viewDoctors();                if (pauseOrExit(sc)) running = false; break;
+                case "5":  viewDoctors(sc);               if (pauseOrExit(sc)) running = false; break;
                 case "6":  addDoctor(sc);                                           break;
                 case "7":  removeDoctor(sc);                                        break;
                 case "8":  processNextAppointment();     if (pauseOrExit(sc)) running = false; break;
@@ -325,9 +325,36 @@ public class HospitalSystem {
 
     // ─── Doctor Management ───────────────────────────────────────────────────────
 
-    private void viewDoctors() {
-        System.out.println("--- Doctors (" + doctorMap.size() + ") ---");
-        doctorMap.printAll();
+    private void viewDoctors(Scanner sc) {
+        List<Doctor> doctors = new ArrayList<>(doctorMap.getAllDoctors());
+        doctors.sort((a, b) -> a.name.compareTo(b.name));
+        if (doctors.isEmpty()) { System.out.println("  (no doctors on record)"); return; }
+        System.out.println("  Total doctors: " + doctors.size());
+        browseDoctorsPaged(doctors, sc);
+    }
+
+    private void browseDoctorsPaged(List<Doctor> doctors, Scanner sc) {
+        final int PAGE = 20;
+        int page = 0;
+        int total = doctors.size();
+        int totalPages = (total + PAGE - 1) / PAGE;
+        while (true) {
+            int from = page * PAGE;
+            int to   = Math.min(from + PAGE, total);
+            System.out.println();
+            System.out.println("  --- Doctors " + (from + 1) + "-" + to + " of " + total
+                    + "  (page " + (page + 1) + "/" + totalPages + ") ---");
+            for (int i = from; i < to; i++) {
+                System.out.println("  " + (i + 1) + ". " + doctors.get(i));
+            }
+            System.out.println();
+            if (totalPages == 1) break;
+            System.out.print("  [N]ext  [P]rev  [Q]uit listing > ");
+            String cmd = sc.nextLine().trim().toLowerCase();
+            if (cmd.equals("n") && page < totalPages - 1) page++;
+            else if (cmd.equals("p") && page > 0) page--;
+            else if (cmd.equals("q") || cmd.isEmpty()) break;
+        }
     }
 
     private void addDoctor(Scanner sc) {
